@@ -1286,7 +1286,7 @@
       <button id="openFolderBtn">Open Folder</button>
       <button id="addProjectBtn" style="display:none;">+ Add Project</button>
       <button id="openProjectBtn" style="display: none;">Select File</button>
-      <button id="openMemoryBtn" style="display: none;">Open Folder</button>
+      <button id="openMemoryBtn" style="display: none;">↻ Refresh</button>
       <button id="saveBtn" class="primary" disabled style="display: none;">Save</button>
       <button id="saveProjectBtn" class="primary" disabled style="display: none;">Save</button>
       <button id="settingsBtn" title="GitHub Settings" style="padding:10px 14px;">⚙</button>
@@ -1331,8 +1331,9 @@
   <!-- MEMORY TAB PANEL -->
   <div class="tab-panel" id="memoryPanel">
     <div id="memoryEmptyState" class="empty-state">
-      <p style="margin-bottom: 24px; font-size: 18px; font-weight: 600; color: var(--text-primary);">Select your project folder</p>
-      <button id="openMemoryBtnLarge">Select Folder</button>
+      <p style="margin-bottom: 24px; font-size: 18px; font-weight: 600; color: var(--text-primary);">Connect GitHub to load your files</p>
+      <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 14px;">Configure your GitHub token and repo in Settings, then come back here.</p>
+      <button id="openMemoryBtnLarge">⚙ Open Settings</button>
     </div>
     <div id="memoryMainContent" style="display: none; flex-direction: column; min-height: 0; flex: 1;">
       <div class="memory-tabs" id="memoryTabsContainer"></div>
@@ -1445,13 +1446,18 @@
       } else if (tab === 'projects') {
         filePathEl.textContent = projectFileHandle ? projectFileName : '';
       } else {
-        filePathEl.textContent = memoryDirHandle ? memoryDirHandle.name : '';
+        filePathEl.textContent = ghConfig.repo || '';
       }
     }
 
     tasksTabBtn.addEventListener('click', () => switchMainTab('tasks'));
     projectsTabBtn.addEventListener('click', () => switchMainTab('projects'));
-    memoryTabBtn.addEventListener('click', () => switchMainTab('memory'));
+    memoryTabBtn.addEventListener('click', () => {
+      switchMainTab('memory');
+      if (ghConfig.token && ghConfig.repo && memoryMainContent.style.display === 'none') {
+        loadMemoryFromGitHub();
+      }
+    });
 
     // ============================================================
     // ===== TASKS FUNCTIONALITY =====
@@ -3266,7 +3272,6 @@
     // ===== MEMORY FUNCTIONALITY =====
     // ============================================================
 
-    let memoryDirHandle = null;
     let memoryData = {
       claudeMd: null,
       memoryFiles: [],
@@ -3357,95 +3362,55 @@
         .join(' ');
     }
 
-    async function loadMemoryDirectory() {
-      if (typeof window.showDirectoryPicker !== 'function') {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.webkitdirectory = true;
-        input.multiple = true;
-        input.onchange = async (e) => {
-          const files = Array.from(e.target.files);
-          if (!files.length) return;
-          memoryData = { claudeMd: null, memoryFiles: [], memoryDirs: {} };
-          const rootName = files[0].webkitRelativePath.split('/')[0];
-          for (const file of files) {
-            if (!file.name.endsWith('.md')) continue;
-            const parts = file.webkitRelativePath.split('/');
-            const content = await file.text();
-            if (parts.length === 2 && parts[1] === 'CLAUDE.md') {
-              memoryData.claudeMd = { content, fileHandle: null };
-            } else if (parts.length === 3 && parts[1] === 'memory') {
-              memoryData.memoryFiles.push({ name: file.name, content, fileHandle: null });
-            } else if (parts.length === 4 && parts[1] === 'memory') {
-              const dirName = parts[2];
-              if (!memoryData.memoryDirs[dirName]) memoryData.memoryDirs[dirName] = [];
-              memoryData.memoryDirs[dirName].push({
-                name: file.name, content, fileHandle: null,
-                parsed: parseMemoryMarkdown(content)
-              });
-            }
-          }
-          renderMemory();
-          memoryEmptyState.style.display = 'none';
-          memoryMainContent.style.display = 'flex';
-          memoryDirHandle = { name: rootName };
-          filePathEl.textContent = rootName;
-          showStatus('Loaded memory from ' + rootName);
-        };
-        input.click();
+    async function loadMemoryFromGitHub() {
+      if (!ghConfig.token || !ghConfig.repo) {
+        memoryEmptyState.style.display = 'flex';
+        memoryMainContent.style.display = 'none';
+        document.getElementById('openMemoryBtnLarge').onclick = () =>
+          document.getElementById('ghSettingsOverlay').classList.add('visible');
         return;
       }
-      try {
-        memoryDirHandle = await window.showDirectoryPicker();
 
+      showStatus('Loading files from GitHub…');
+      const skipFiles = new Set(['TASKS.md', 'dashboard.html', '.gitignore']);
+
+      try {
+        const entries = await ghFetch(ghApiUrl());
         memoryData = { claudeMd: null, memoryFiles: [], memoryDirs: {} };
 
-        try {
-          const claudeFileHandle = await memoryDirHandle.getFileHandle('CLAUDE.md');
-          const file = await claudeFileHandle.getFile();
-          memoryData.claudeMd = { content: await file.text(), fileHandle: claudeFileHandle };
-        } catch (e) { console.log('No CLAUDE.md found'); }
+        const loadEntry = async (entry) => {
+          const data = await ghFetch(entry.url);
+          const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
+          return { name: entry.name, content, sha: data.sha, path: data.path };
+        };
 
-        try {
-          const memoryDir = await memoryDirHandle.getDirectoryHandle('memory');
-          for await (const entry of memoryDir.values()) {
-            if (entry.kind === 'file' && entry.name.endsWith('.md')) {
-              const file = await entry.getFile();
-              memoryData.memoryFiles.push({
-                name: entry.name,
-                content: await file.text(),
-                fileHandle: entry
-              });
-            } else if (entry.kind === 'directory') {
-              memoryData.memoryDirs[entry.name] = [];
-              const subDirHandle = entry;
-              for await (const subEntry of subDirHandle.values()) {
-                if (subEntry.kind === 'file' && subEntry.name.endsWith('.md')) {
-                  const file = await subEntry.getFile();
-                  const content = await file.text();
-                  memoryData.memoryDirs[entry.name].push({
-                    name: subEntry.name,
-                    content: content,
-                    fileHandle: subEntry,
-                    dirHandle: subDirHandle,
-                    parsed: parseMemoryMarkdown(content)
-                  });
-                }
-              }
+        for (const entry of entries) {
+          if (entry.type !== 'file' || !entry.name.endsWith('.md')) continue;
+          if (skipFiles.has(entry.name)) continue;
+          try {
+            const loaded = await loadEntry(entry);
+            if (entry.name === 'CLAUDE.md') {
+              memoryData.claudeMd = loaded;
+            } else {
+              memoryData.memoryFiles.push(loaded);
             }
-          }
-        } catch (e) { console.log('No memory/ directory found'); }
+          } catch (e) { console.warn('Failed to load', entry.name, e); }
+        }
+
+        memoryData.memoryFiles.sort((a, b) => a.name.localeCompare(b.name));
 
         renderMemory();
         memoryEmptyState.style.display = 'none';
         memoryMainContent.style.display = 'flex';
-        filePathEl.textContent = memoryDirHandle.name;
-        showStatus('Loaded memory from ' + memoryDirHandle.name);
+        filePathEl.textContent = ghConfig.repo;
+        const count = memoryData.memoryFiles.length + (memoryData.claudeMd ? 1 : 0);
+        showStatus('Loaded ' + count + ' files from GitHub');
 
       } catch (e) {
-        if (e.name !== 'AbortError') { showStatus('Error: ' + e.message); }
+        showStatus('Error loading from GitHub: ' + e.message);
+        console.error(e);
       }
-    } // end loadMemoryDirectory
+    } // end loadMemoryFromGitHub
 
     function renderMemory() {
       renderMemoryTabs();
@@ -3833,62 +3798,42 @@
       const type = modalOverlay.dataset.type;
       const content = document.getElementById('editContent').value;
 
+      const ghCommit = async (filePath, sha, fileContent, label) => {
+        const encoded = btoa(unescape(encodeURIComponent(fileContent)));
+        const result = await ghFetch(
+          `https://api.github.com/repos/${ghConfig.repo}/contents/${filePath}`,
+          { method: 'PUT', body: JSON.stringify({ message: `Update ${label}`, content: encoded, sha }) }
+        );
+        return result.content.sha;
+      };
+
       try {
         if (type === 'claudeMd') {
-          memoryData.claudeMd.content = content;
-          const writable = await memoryData.claudeMd.fileHandle.createWritable();
-          await writable.write(content);
-          await writable.close();
-          showStatus('Saved CLAUDE.md');
+          const file = memoryData.claudeMd;
+          file.sha = await ghCommit(file.path, file.sha, content, 'CLAUDE.md');
+          file.content = content;
+          showStatus('Saved CLAUDE.md to GitHub');
 
         } else if (type === 'memoryFile') {
           const fileName = modalOverlay.dataset.fileName;
           const file = memoryData.memoryFiles.find(f => f.name === fileName);
           if (file) {
+            file.sha = await ghCommit(file.path, file.sha, content, fileName);
             file.content = content;
-            const writable = await file.fileHandle.createWritable();
-            await writable.write(content);
-            await writable.close();
-            showStatus('Saved ' + fileName);
+            showStatus('Saved ' + fileName + ' to GitHub');
           }
 
         } else if (type === 'dirFile') {
           const dirName = modalOverlay.dataset.dirName;
           const fileName = modalOverlay.dataset.fileName;
           const files = memoryData.memoryDirs[dirName];
-          const file = files.find(f => f.name === fileName);
+          const file = files ? files.find(f => f.name === fileName) : null;
           if (file) {
+            file.sha = await ghCommit(file.path, file.sha, content, fileName);
             file.content = content;
             file.parsed = parseMemoryMarkdown(content);
-            const writable = await file.fileHandle.createWritable();
-            await writable.write(content);
-            await writable.close();
-            showStatus('Saved ' + fileName);
+            showStatus('Saved ' + fileName + ' to GitHub');
           }
-
-        } else if (type === 'newDirFile') {
-          const dirName = modalOverlay.dataset.dirName;
-          let fileName = document.getElementById('newFileName').value.trim();
-          if (!fileName) { showStatus('Please enter a filename'); return; }
-          if (!fileName.endsWith('.md')) fileName += '.md';
-
-          const memoryDir = await memoryDirHandle.getDirectoryHandle('memory');
-          const subDir = await memoryDir.getDirectoryHandle(dirName, { create: true });
-          const fileHandle = await subDir.getFileHandle(fileName, { create: true });
-
-          const writable = await fileHandle.createWritable();
-          await writable.write(content);
-          await writable.close();
-
-          memoryData.memoryDirs[dirName].push({
-            name: fileName,
-            content: content,
-            fileHandle: fileHandle,
-            dirHandle: subDir,
-            parsed: parseMemoryMarkdown(content)
-          });
-
-          showStatus('Created ' + fileName);
         }
 
         closeModal();
@@ -3896,12 +3841,19 @@
 
       } catch (e) {
         showStatus('Error saving: ' + e.message);
+        console.error(e);
       }
     }
 
     // Memory event listeners
-    openMemoryBtn.addEventListener('click', loadMemoryDirectory);
-    document.getElementById('openMemoryBtnLarge').addEventListener('click', loadMemoryDirectory);
+    openMemoryBtn.addEventListener('click', loadMemoryFromGitHub);
+    document.getElementById('openMemoryBtnLarge').addEventListener('click', () => {
+      if (ghConfig.token && ghConfig.repo) {
+        loadMemoryFromGitHub();
+      } else {
+        document.getElementById('ghSettingsOverlay').classList.add('visible');
+      }
+    });
     document.getElementById('modalClose').addEventListener('click', closeModal);
     document.getElementById('modalCancel').addEventListener('click', closeModal);
     document.getElementById('modalSave').addEventListener('click', saveModal);
