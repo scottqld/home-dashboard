@@ -2950,7 +2950,11 @@
     async function openTaskFile() { await addProjectFromFile(); }
 
     saveBtn.addEventListener('click', async () => {
-      if (taskFileHandle) {
+      if (ghConfig.token && currentProjectFile) {
+        await ghSaveProject(currentProjectFile);
+        hasChanges = false;
+        saveBtn.disabled = true;
+      } else if (taskFileHandle) {
         try {
           const writable = await taskFileHandle.createWritable();
           await writable.write(toMarkdown());
