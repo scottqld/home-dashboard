@@ -1433,7 +1433,7 @@
 
       taskViewToggle.style.display = tab === 'tasks' ? 'flex' : 'none';
 
-      openFolderBtn.style.display = (tab === 'tasks' && !currentProjectFile) ? 'inline-flex' : 'none';
+      openFolderBtn.style.display = (tab === 'tasks' && !currentProjectFile && !ghConfig.token) ? 'inline-flex' : 'none';
       addProjectBtn.style.display = (tab === 'tasks' && !currentProjectFile && Object.keys(allProjects).length > 0) ? 'inline-flex' : 'none';
       openProjectBtn.style.display = tab === 'projects' ? 'inline-flex' : 'none';
       openMemoryBtn.style.display = tab === 'memory' ? 'inline-flex' : 'none';
@@ -2866,7 +2866,7 @@
       taskFileHandle = null;
       projectBoardView.style.display = 'none';
       projectsOverview.style.display = 'flex';
-      openFolderBtn.style.display = 'inline-flex';
+      openFolderBtn.style.display = ghConfig.token ? 'none' : 'inline-flex';
       saveBtn.style.display = 'none';
       taskViewToggle.style.display = 'none';
       renderProjectCards();
