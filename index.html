@@ -3700,4 +3700,225 @@
     }
 
     function filterMemoryDirectory(dirName, searchTerm) {
-      const grid 
+      const grid = document.getElementById('dirGrid');
+      const items = grid.querySelectorAll('.memory-card, tr[data-search]');
+      const search = searchTerm.toLowerCase();
+      items.forEach(item => {
+        const searchData = item.dataset.search || '';
+        item.style.display = (!search || searchData.includes(search)) ? '' : 'none';
+      });
+    }
+
+    function renderMarkdownToHtml(md) {
+      let html = escapeHtml(md);
+
+      html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+      html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+      html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+      html = html.replace(/```[\s\S]*?```/g, match => {
+        const code = match.replace(/```\w*\n?/g, '');
+        return '<pre><code>' + code + '</code></pre>';
+      });
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      html = html.replace(/(\|.+\|\n\|[-| ]+\|\n(?:\|.+\|\n?)+)/g, match => {
+        const lines = match.trim().split('\n');
+        const headers = lines[0].split('|').filter(c => c.trim());
+        const rows = lines.slice(2).map(row => row.split('|').filter(c => c.trim()));
+        let table = '<table><thead><tr>';
+        headers.forEach(h => table += `<th>${h.trim()}</th>`);
+        table += '</tr></thead><tbody>';
+        rows.forEach(row => {
+          table += '<tr>';
+          row.forEach(cell => table += `<td>${cell.trim()}</td>`);
+          table += '</tr>';
+        });
+        table += '</tbody></table>';
+        return table;
+      });
+      html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+      html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+      html = html.replace(/^(?!<[hupol]|<li|<table|<pre)(.+)$/gm, '<p>$1</p>');
+      html = html.replace(/<p><\/p>/g, '');
+      html = html.replace(/<p>\s*<\/p>/g, '');
+
+      return html;
+    }
+
+    // Modal functions
+    function openFileModal(dirName, fileName) {
+      const files = memoryData.memoryDirs[dirName];
+      const file = files.find(f => f.name === fileName);
+      if (!file) return;
+
+      document.getElementById('modalTitle').textContent = getDisplayName(fileName);
+      document.getElementById('modalBody').innerHTML = `
+        <div class="markdown-content" style="margin-bottom: 20px;">
+          ${renderMarkdownToHtml(file.content)}
+        </div>
+        <div class="form-group">
+          <label>Edit Raw Markdown</label>
+          <textarea id="editContent">${escapeHtml(file.content)}</textarea>
+        </div>
+      `;
+
+      modalOverlay.classList.add('visible');
+      modalOverlay.dataset.type = 'dirFile';
+      modalOverlay.dataset.dirName = dirName;
+      modalOverlay.dataset.fileName = fileName;
+    }
+
+    function openNewFileModal(dirName) {
+      document.getElementById('modalTitle').textContent = `Add to ${dirName}`;
+
+      let template = '# New Entry\n\n';
+      const existingFiles = memoryData.memoryDirs[dirName];
+      if (existingFiles && existingFiles.length > 0) {
+        const sample = existingFiles[0].parsed;
+        for (const key of Object.keys(sample.fields)) {
+          template += `**${key}:** \n`;
+        }
+        template += '\n';
+        for (const section of Object.keys(sample.sections)) {
+          if (section !== '_intro') {
+            template += `## ${section}\n\n`;
+          }
+        }
+      }
+
+      document.getElementById('modalBody').innerHTML = `
+        <div class="form-group">
+          <label>Filename (without .md)</label>
+          <input type="text" id="newFileName" placeholder="my-new-entry" style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text-primary); font-size: 14px; font-family: inherit; margin-bottom: 16px;">
+        </div>
+        <div class="form-group">
+          <label>Content</label>
+          <textarea id="editContent">${escapeHtml(template)}</textarea>
+        </div>
+      `;
+
+      modalOverlay.classList.add('visible');
+      modalOverlay.dataset.type = 'newDirFile';
+      modalOverlay.dataset.dirName = dirName;
+    }
+
+    function openEditModal(fileName, type) {
+      let content = '';
+      if (type === 'claudeMd') {
+        content = memoryData.claudeMd.content;
+      } else if (type === 'memoryFile') {
+        const file = memoryData.memoryFiles.find(f => f.name === fileName);
+        if (file) content = file.content;
+      }
+
+      document.getElementById('modalTitle').textContent = `Edit ${fileName}`;
+      document.getElementById('modalBody').innerHTML = `
+        <div class="form-group">
+          <label>Content</label>
+          <textarea id="editContent" style="min-height: 400px;">${escapeHtml(content)}</textarea>
+        </div>
+      `;
+
+      modalOverlay.classList.add('visible');
+      modalOverlay.dataset.type = type;
+      modalOverlay.dataset.fileName = fileName;
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('visible');
+    }
+
+    async function saveModal() {
+      const type = modalOverlay.dataset.type;
+      const content = document.getElementById('editContent').value;
+
+      try {
+        if (type === 'claudeMd') {
+          memoryData.claudeMd.content = content;
+          const writable = await memoryData.claudeMd.fileHandle.createWritable();
+          await writable.write(content);
+          await writable.close();
+          showStatus('Saved CLAUDE.md');
+
+        } else if (type === 'memoryFile') {
+          const fileName = modalOverlay.dataset.fileName;
+          const file = memoryData.memoryFiles.find(f => f.name === fileName);
+          if (file) {
+            file.content = content;
+            const writable = await file.fileHandle.createWritable();
+            await writable.write(content);
+            await writable.close();
+            showStatus('Saved ' + fileName);
+          }
+
+        } else if (type === 'dirFile') {
+          const dirName = modalOverlay.dataset.dirName;
+          const fileName = modalOverlay.dataset.fileName;
+          const files = memoryData.memoryDirs[dirName];
+          const file = files.find(f => f.name === fileName);
+          if (file) {
+            file.content = content;
+            file.parsed = parseMemoryMarkdown(content);
+            const writable = await file.fileHandle.createWritable();
+            await writable.write(content);
+            await writable.close();
+            showStatus('Saved ' + fileName);
+          }
+
+        } else if (type === 'newDirFile') {
+          const dirName = modalOverlay.dataset.dirName;
+          let fileName = document.getElementById('newFileName').value.trim();
+          if (!fileName) { showStatus('Please enter a filename'); return; }
+          if (!fileName.endsWith('.md')) fileName += '.md';
+
+          const memoryDir = await memoryDirHandle.getDirectoryHandle('memory');
+          const subDir = await memoryDir.getDirectoryHandle(dirName, { create: true });
+          const fileHandle = await subDir.getFileHandle(fileName, { create: true });
+
+          const writable = await fileHandle.createWritable();
+          await writable.write(content);
+          await writable.close();
+
+          memoryData.memoryDirs[dirName].push({
+            name: fileName,
+            content: content,
+            fileHandle: fileHandle,
+            dirHandle: subDir,
+            parsed: parseMemoryMarkdown(content)
+          });
+
+          showStatus('Created ' + fileName);
+        }
+
+        closeModal();
+        renderMemory();
+
+      } catch (e) {
+        showStatus('Error saving: ' + e.message);
+      }
+    }
+
+    // Memory event listeners
+    openMemoryBtn.addEventListener('click', loadMemoryDirectory);
+    document.getElementById('openMemoryBtnLarge').addEventListener('click', loadMemoryDirectory);
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.getElementById('modalCancel').addEventListener('click', closeModal);
+    document.getElementById('modalSave').addEventListener('click', saveModal);
+
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // Expose functions to onclick handlers
+    window.openFileModal = openFileModal;
+    window.openNewFileModal = openNewFileModal;
+    window.openEditModal = openEditModal;
+    window.filterMemoryDirectory = filterMemoryDirectory;
+  </script>
+</body>
+</html>
