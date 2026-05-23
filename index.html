@@ -1376,7 +1376,7 @@
       <button id="addProjectBtn" style="display:none;">+ Add Project</button>
       <button id="openProjectBtn" style="display: none;">Select File</button>
       <button id="openMemoryBtn" style="display: none;">↻ Refresh</button>
-      <button id="openBudgetBtn" style="display: none;">Open Folder</button>
+      <button id="openBudgetBtn" style="display: none;">Import</button>
       <button id="saveBtn" class="primary" disabled style="display: none;">Save</button>
       <button id="saveProjectBtn" class="primary" disabled style="display: none;">Save</button>
       <button id="settingsBtn" title="GitHub Settings" style="padding:10px 14px;">⚙</button>
@@ -1436,9 +1436,9 @@
   <!-- BUDGET TAB PANEL -->
   <div class="tab-panel" id="budgetPanel">
     <div id="budgetEmptyState" class="empty-state">
-      <p id="budgetEmptyTitle" style="margin-bottom:24px;font-size:18px;font-weight:600;color:var(--text-primary);">Open your budget folder</p>
-      <p id="budgetEmptyDesc" style="color:var(--text-muted);margin-bottom:16px;font-size:14px;">Select the folder containing your Data_Export_*.csv files</p>
-      <button id="openBudgetBtnLarge">Open Folder</button>
+      <p id="budgetEmptyTitle" style="margin-bottom:24px;font-size:18px;font-weight:600;color:var(--text-primary);">No transaction data yet</p>
+      <p id="budgetEmptyDesc" style="color:var(--text-muted);margin-bottom:16px;font-size:14px;">Click Import to load your Data_Export_*.csv files</p>
+      <button id="openBudgetBtnLarge">Import</button>
     </div>
     <div id="budgetMainContent" style="display:none;flex-direction:column;flex:1;min-height:0;">
       <div style="flex:1;overflow-y:auto;min-height:0;padding:4px 0 24px;">
@@ -4086,9 +4086,24 @@
     }
 
     async function openBudgetFolder() {
+      // Use saved handle if available — no picker needed
+      const saved = await getSavedBudgetHandle();
+      if (saved) {
+        try {
+          const perm = await saved.requestPermission({ mode: 'read' });
+          if (perm === 'granted') {
+            budgetFolderHandle = saved;
+            await importNewBudgetFiles();
+            switchMainTab('budget');
+            return;
+          }
+        } catch { /* handle invalid — fall through to picker */ }
+      }
+      // First time or saved handle no longer valid
       try {
-        budgetFolderHandle = await window.showDirectoryPicker({ id: 'budget', mode: 'read' });
-        await saveBudgetHandle(budgetFolderHandle);
+        const handle = await window.showDirectoryPicker({ id: 'budget', mode: 'read' });
+        await saveBudgetHandle(handle);
+        budgetFolderHandle = handle;
         await importNewBudgetFiles();
         switchMainTab('budget');
       } catch(e) {
