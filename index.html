@@ -4078,11 +4078,14 @@
 
     async function tryAutoLoadBudget() {
       const txs = await loadAllTransactionsFromDB();
-      if (!txs.length) return;
-      budgetTransactions = txs;
-      const months = [...new Set(txs.map(t => t.month))].sort();
-      budgetSelectedMonth = months[months.length - 1] || null;
-      renderBudget();
+      if (txs.length) {
+        budgetTransactions = txs;
+        const months = [...new Set(txs.map(t => t.month))].sort();
+        budgetSelectedMonth = months[months.length - 1] || null;
+        await renderBudget();
+      }
+      // Silently pick up any new files if folder permission is already granted
+      await autoCheckNewFiles();
     }
 
     async function openBudgetFolder() {
@@ -4111,20 +4114,22 @@
       }
     }
 
-    async function importNewBudgetFiles() {
+    async function importNewBudgetFiles(silent = false) {
       if (!budgetFolderHandle) return;
       const allFiles = [];
       for await (const [name, handle] of budgetFolderHandle.entries()) {
         if (handle.kind === 'file' && /^Data_Export_.*\.csv$/i.test(name)) allFiles.push({ name, handle });
       }
-      if (!allFiles.length) { showStatus('No Data_Export_*.csv files found in folder'); return; }
+      if (!allFiles.length) { if (!silent) showStatus('No Data_Export_*.csv files found in folder'); return; }
 
       const imported = await getImportedFiles();
       const newFiles = allFiles.filter(f => !imported[f.name]).sort((a, b) => a.name.localeCompare(b.name));
 
       if (!newFiles.length) {
-        showStatus(`All ${allFiles.length} file${allFiles.length > 1 ? 's' : ''} already imported — no new data`);
-        if (budgetTransactions.length) renderBudget();
+        if (!silent) {
+          showStatus(`All ${allFiles.length} file${allFiles.length > 1 ? 's' : ''} already imported — no new data`);
+          if (budgetTransactions.length) renderBudget();
+        }
         return;
       }
 
@@ -4140,8 +4145,17 @@
       if (!budgetSelectedMonth || !months.includes(budgetSelectedMonth)) {
         budgetSelectedMonth = months[months.length - 1] || null;
       }
-      showStatus(`Imported ${totalNew} transactions from ${newFiles.length} new file${newFiles.length > 1 ? 's' : ''}`);
+      showStatus(`Imported ${totalNew} new transaction${totalNew > 1 ? 's' : ''} from ${newFiles.length} file${newFiles.length > 1 ? 's' : ''}`);
       renderBudget();
+    }
+
+    async function autoCheckNewFiles() {
+      const handle = budgetFolderHandle || await getSavedBudgetHandle();
+      if (!handle) return;
+      const perm = await handle.queryPermission({ mode: 'read' });
+      if (perm !== 'granted') return;
+      budgetFolderHandle = handle;
+      await importNewBudgetFiles(true);
     }
 
     function parseCSVRow(line) {
@@ -4378,8 +4392,11 @@
 
     document.getElementById('budgetTabBtn').addEventListener('click', async () => {
       switchMainTab('budget');
-      // Only load from DB if nothing is in memory; re-reads from disk require explicit user action
-      if (!budgetTransactions.length) await tryAutoLoadBudget();
+      if (!budgetTransactions.length) {
+        await tryAutoLoadBudget();
+      } else {
+        await autoCheckNewFiles();
+      }
     });
     document.getElementById('openBudgetBtn').addEventListener('click', openBudgetFolder);
     document.getElementById('openBudgetBtnLarge').addEventListener('click', openBudgetFolder);
