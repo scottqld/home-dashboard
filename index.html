@@ -2809,6 +2809,7 @@
       projectsEmptyState.style.display = 'none';
       projectCardsGrid.style.display = 'block';
       addProjectBtn.style.display = 'inline-flex';
+      if (ghConfig.token) openFolderBtn.style.display = 'none';
 
       for (const filename of files) {
         const p = allProjects[filename];
