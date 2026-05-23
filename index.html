@@ -1256,93 +1256,6 @@
       color: var(--accent);
     }
 
-    /* ===== BUDGET ===== */
-    .budget-month-selector { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; }
-    .budget-month-btn {
-      background: var(--bg-secondary); border: 1px solid var(--border);
-      padding: 5px 12px; font-size: 12px; border-radius: 6px; color: var(--text-secondary);
-    }
-    .budget-month-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .budget-month-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
-    .budget-summary-cards {
-      display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px;
-    }
-    .budget-card {
-      background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px;
-    }
-    .budget-card-label {
-      font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 6px;
-    }
-    .budget-card-value { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
-    .budget-card-value.income { color: #16a34a; }
-    .budget-card-value.expense { color: var(--accent); }
-    .budget-two-col {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
-      margin-bottom: 24px; align-items: start;
-    }
-    .budget-section-title {
-      font-size: 12px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 10px;
-    }
-    .budget-panel-box {
-      background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px;
-    }
-    .budget-bar-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 6px 0; border-bottom: 1px solid var(--border-light); font-size: 12px;
-    }
-    .budget-bar-row:last-child { border-bottom: none; }
-    .budget-bar-label {
-      flex: 0 0 140px; color: var(--text-primary);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px;
-    }
-    .budget-bar-wrap { flex: 1; height: 6px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; }
-    .budget-bar { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.3s ease; }
-    .budget-bar.over { background: #ef4444; }
-    .budget-bar.blue { background: #60a5fa; }
-    .budget-bar-amount { flex: 0 0 75px; text-align: right; font-weight: 500; color: var(--text-primary); }
-    .budget-bar-extra { flex: 0 0 90px; text-align: right; font-size: 11px; color: var(--text-muted); }
-    .budget-bar-extra .over { color: #ef4444; }
-    .budget-bar-extra .under { color: #16a34a; }
-    .budget-rank { flex: 0 0 18px; font-size: 11px; color: var(--text-muted); font-weight: 600; }
-    .set-limit-btn {
-      background: transparent; border: 1px solid var(--border);
-      padding: 2px 7px; font-size: 11px; border-radius: 4px; color: var(--text-muted);
-    }
-    .set-limit-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .budget-trend-wrap {
-      background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
-      padding: 16px; margin-bottom: 24px; overflow-x: auto;
-    }
-    .budget-trend { display: flex; align-items: flex-end; gap: 8px; min-height: 110px; }
-    .budget-trend-group {
-      display: flex; flex-direction: column; align-items: center;
-      gap: 4px; cursor: pointer; flex-shrink: 0;
-    }
-    .budget-trend-group:hover .budget-trend-bars { opacity: 0.7; }
-    .budget-trend-group.selected .budget-trend-month { color: var(--accent); font-weight: 600; }
-    .budget-trend-bars { display: flex; align-items: flex-end; gap: 2px; height: 80px; }
-    .budget-trend-bar { width: 16px; border-radius: 3px 3px 0 0; min-height: 2px; }
-    .budget-trend-bar.income { background: #16a34a; opacity: 0.75; }
-    .budget-trend-bar.expense { background: var(--accent); opacity: 0.75; }
-    .budget-trend-month { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
-    .budget-tx-list {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 10px; overflow: hidden; margin-bottom: 24px;
-    }
-    .budget-tx-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 8px 16px; border-bottom: 1px solid var(--border-light); font-size: 12px;
-    }
-    .budget-tx-row:last-child { border-bottom: none; }
-    .budget-tx-date { flex: 0 0 78px; color: var(--text-muted); font-size: 11px; }
-    .budget-tx-narrative { flex: 1; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .budget-tx-cat { flex: 0 0 120px; font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .budget-tx-amount { flex: 0 0 85px; text-align: right; font-weight: 500; }
-    .budget-tx-amount.income { color: #16a34a; }
-    .budget-tx-amount.expense { color: var(--accent); }
-    .budget-tx-balance { flex: 0 0 85px; text-align: right; color: var(--text-muted); font-size: 11px; }
   </style>
 </head>
 <body>
@@ -1364,7 +1277,6 @@
         <button id="tasksTabBtn" class="active">Tasks</button>
         <button id="projectsTabBtn" style="display:none;">Projects</button>
         <button id="memoryTabBtn">Memory</button>
-        <button id="budgetTabBtn">Budget</button>
       </div>
       <div class="view-toggle" id="taskViewToggle">
         <button id="boardViewBtn" class="active">Board</button>
@@ -1376,8 +1288,7 @@
       <button id="addProjectBtn" style="display:none;">+ Add Project</button>
       <button id="openProjectBtn" style="display: none;">Select File</button>
       <button id="openMemoryBtn" style="display: none;">↻ Refresh</button>
-      <button id="openBudgetBtn" style="display: none;">Import</button>
-      <button id="saveBtn" class="primary" disabled style="display: none;">Save</button>
+<button id="saveBtn" class="primary" disabled style="display: none;">Save</button>
       <button id="saveProjectBtn" class="primary" disabled style="display: none;">Save</button>
       <button id="settingsBtn" title="GitHub Settings" style="padding:10px 14px;">⚙</button>
     </div>
@@ -1429,20 +1340,6 @@
       <div class="memory-tabs" id="memoryTabsContainer"></div>
       <div class="memory-content-area">
         <div id="memoryContentContainer"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- BUDGET TAB PANEL -->
-  <div class="tab-panel" id="budgetPanel">
-    <div id="budgetEmptyState" class="empty-state">
-      <p id="budgetEmptyTitle" style="margin-bottom:24px;font-size:18px;font-weight:600;color:var(--text-primary);">No transaction data yet</p>
-      <p id="budgetEmptyDesc" style="color:var(--text-muted);margin-bottom:16px;font-size:14px;">Click Import to load your Data_Export_*.csv files</p>
-      <button id="openBudgetBtnLarge">Import</button>
-    </div>
-    <div id="budgetMainContent" style="display:none;flex-direction:column;flex:1;min-height:0;">
-      <div style="flex:1;overflow-y:auto;min-height:0;padding:4px 0 24px;">
-        <div id="budgetContent"></div>
       </div>
     </div>
   </div>
@@ -1530,12 +1427,10 @@
       tasksTabBtn.classList.toggle('active', tab === 'tasks');
       projectsTabBtn.classList.toggle('active', tab === 'projects');
       memoryTabBtn.classList.toggle('active', tab === 'memory');
-      document.getElementById('budgetTabBtn').classList.toggle('active', tab === 'budget');
 
       tasksPanel.classList.toggle('active', tab === 'tasks');
       projectsPanel.classList.toggle('active', tab === 'projects');
       memoryPanel.classList.toggle('active', tab === 'memory');
-      document.getElementById('budgetPanel').classList.toggle('active', tab === 'budget');
 
       taskViewToggle.style.display = tab === 'tasks' ? 'flex' : 'none';
 
@@ -1543,7 +1438,6 @@
       addProjectBtn.style.display = (tab === 'tasks' && !currentProjectFile && Object.keys(allProjects).length > 0) ? 'inline-flex' : 'none';
       openProjectBtn.style.display = tab === 'projects' ? 'inline-flex' : 'none';
       openMemoryBtn.style.display = tab === 'memory' ? 'inline-flex' : 'none';
-      document.getElementById('openBudgetBtn').style.display = tab === 'budget' ? 'inline-flex' : 'none';
       saveBtn.style.display = (tab === 'tasks' && currentProjectFile) ? 'inline-flex' : 'none';
       saveProjectBtn.style.display = tab === 'projects' ? 'inline-flex' : 'none';
       taskViewToggle.style.display = (tab === 'tasks' && currentProjectFile) ? 'flex' : 'none';
@@ -1552,8 +1446,6 @@
         filePathEl.textContent = currentProjectFile ? allProjects[currentProjectFile]?.name || '' : (projectsFolder ? projectsFolder.name || '' : '');
       } else if (tab === 'projects') {
         filePathEl.textContent = projectFileHandle ? projectFileName : '';
-      } else if (tab === 'budget') {
-        filePathEl.textContent = typeof budgetFolderHandle !== 'undefined' && budgetFolderHandle ? budgetFolderHandle.name : '';
       } else {
         filePathEl.textContent = ghConfig.repo || '';
       }
