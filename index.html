@@ -1255,6 +1255,94 @@
       border-color: var(--accent);
       color: var(--accent);
     }
+
+    /* ===== BUDGET ===== */
+    .budget-month-selector { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; }
+    .budget-month-btn {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      padding: 5px 12px; font-size: 12px; border-radius: 6px; color: var(--text-secondary);
+    }
+    .budget-month-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .budget-month-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .budget-summary-cards {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px;
+    }
+    .budget-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px;
+    }
+    .budget-card-label {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 6px;
+    }
+    .budget-card-value { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+    .budget-card-value.income { color: #16a34a; }
+    .budget-card-value.expense { color: var(--accent); }
+    .budget-two-col {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+      margin-bottom: 24px; align-items: start;
+    }
+    .budget-section-title {
+      font-size: 12px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 10px;
+    }
+    .budget-panel-box {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px;
+    }
+    .budget-bar-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 0; border-bottom: 1px solid var(--border-light); font-size: 12px;
+    }
+    .budget-bar-row:last-child { border-bottom: none; }
+    .budget-bar-label {
+      flex: 0 0 140px; color: var(--text-primary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px;
+    }
+    .budget-bar-wrap { flex: 1; height: 6px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; }
+    .budget-bar { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.3s ease; }
+    .budget-bar.over { background: #ef4444; }
+    .budget-bar.blue { background: #60a5fa; }
+    .budget-bar-amount { flex: 0 0 75px; text-align: right; font-weight: 500; color: var(--text-primary); }
+    .budget-bar-extra { flex: 0 0 90px; text-align: right; font-size: 11px; color: var(--text-muted); }
+    .budget-bar-extra .over { color: #ef4444; }
+    .budget-bar-extra .under { color: #16a34a; }
+    .budget-rank { flex: 0 0 18px; font-size: 11px; color: var(--text-muted); font-weight: 600; }
+    .set-limit-btn {
+      background: transparent; border: 1px solid var(--border);
+      padding: 2px 7px; font-size: 11px; border-radius: 4px; color: var(--text-muted);
+    }
+    .set-limit-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .budget-trend-wrap {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px; margin-bottom: 24px; overflow-x: auto;
+    }
+    .budget-trend { display: flex; align-items: flex-end; gap: 8px; min-height: 110px; }
+    .budget-trend-group {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 4px; cursor: pointer; flex-shrink: 0;
+    }
+    .budget-trend-group:hover .budget-trend-bars { opacity: 0.7; }
+    .budget-trend-group.selected .budget-trend-month { color: var(--accent); font-weight: 600; }
+    .budget-trend-bars { display: flex; align-items: flex-end; gap: 2px; height: 80px; }
+    .budget-trend-bar { width: 16px; border-radius: 3px 3px 0 0; min-height: 2px; }
+    .budget-trend-bar.income { background: #16a34a; opacity: 0.75; }
+    .budget-trend-bar.expense { background: var(--accent); opacity: 0.75; }
+    .budget-trend-month { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+    .budget-tx-list {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden; margin-bottom: 24px;
+    }
+    .budget-tx-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 16px; border-bottom: 1px solid var(--border-light); font-size: 12px;
+    }
+    .budget-tx-row:last-child { border-bottom: none; }
+    .budget-tx-date { flex: 0 0 78px; color: var(--text-muted); font-size: 11px; }
+    .budget-tx-narrative { flex: 1; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .budget-tx-cat { flex: 0 0 120px; font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .budget-tx-amount { flex: 0 0 85px; text-align: right; font-weight: 500; }
+    .budget-tx-amount.income { color: #16a34a; }
+    .budget-tx-amount.expense { color: var(--accent); }
+    .budget-tx-balance { flex: 0 0 85px; text-align: right; color: var(--text-muted); font-size: 11px; }
   </style>
 </head>
 <body>
@@ -1276,6 +1364,7 @@
         <button id="tasksTabBtn" class="active">Tasks</button>
         <button id="projectsTabBtn" style="display:none;">Projects</button>
         <button id="memoryTabBtn">Memory</button>
+        <button id="budgetTabBtn">Budget</button>
       </div>
       <div class="view-toggle" id="taskViewToggle">
         <button id="boardViewBtn" class="active">Board</button>
@@ -1287,6 +1376,7 @@
       <button id="addProjectBtn" style="display:none;">+ Add Project</button>
       <button id="openProjectBtn" style="display: none;">Select File</button>
       <button id="openMemoryBtn" style="display: none;">↻ Refresh</button>
+      <button id="openBudgetBtn" style="display: none;">Open Folder</button>
       <button id="saveBtn" class="primary" disabled style="display: none;">Save</button>
       <button id="saveProjectBtn" class="primary" disabled style="display: none;">Save</button>
       <button id="settingsBtn" title="GitHub Settings" style="padding:10px 14px;">⚙</button>
@@ -1339,6 +1429,20 @@
       <div class="memory-tabs" id="memoryTabsContainer"></div>
       <div class="memory-content-area">
         <div id="memoryContentContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUDGET TAB PANEL -->
+  <div class="tab-panel" id="budgetPanel">
+    <div id="budgetEmptyState" class="empty-state">
+      <p style="margin-bottom:24px;font-size:18px;font-weight:600;color:var(--text-primary);">Open your budget folder</p>
+      <p style="color:var(--text-muted);margin-bottom:16px;font-size:14px;">Select the folder containing your Data_Export_*.csv files</p>
+      <button id="openBudgetBtnLarge">Open Folder</button>
+    </div>
+    <div id="budgetMainContent" style="display:none;flex-direction:column;flex:1;min-height:0;">
+      <div style="flex:1;overflow-y:auto;min-height:0;padding:4px 0 24px;">
+        <div id="budgetContent"></div>
       </div>
     </div>
   </div>
@@ -1426,10 +1530,12 @@
       tasksTabBtn.classList.toggle('active', tab === 'tasks');
       projectsTabBtn.classList.toggle('active', tab === 'projects');
       memoryTabBtn.classList.toggle('active', tab === 'memory');
+      document.getElementById('budgetTabBtn').classList.toggle('active', tab === 'budget');
 
       tasksPanel.classList.toggle('active', tab === 'tasks');
       projectsPanel.classList.toggle('active', tab === 'projects');
       memoryPanel.classList.toggle('active', tab === 'memory');
+      document.getElementById('budgetPanel').classList.toggle('active', tab === 'budget');
 
       taskViewToggle.style.display = tab === 'tasks' ? 'flex' : 'none';
 
@@ -1437,6 +1543,7 @@
       addProjectBtn.style.display = (tab === 'tasks' && !currentProjectFile && Object.keys(allProjects).length > 0) ? 'inline-flex' : 'none';
       openProjectBtn.style.display = tab === 'projects' ? 'inline-flex' : 'none';
       openMemoryBtn.style.display = tab === 'memory' ? 'inline-flex' : 'none';
+      document.getElementById('openBudgetBtn').style.display = tab === 'budget' ? 'inline-flex' : 'none';
       saveBtn.style.display = (tab === 'tasks' && currentProjectFile) ? 'inline-flex' : 'none';
       saveProjectBtn.style.display = tab === 'projects' ? 'inline-flex' : 'none';
       taskViewToggle.style.display = (tab === 'tasks' && currentProjectFile) ? 'flex' : 'none';
@@ -1445,6 +1552,8 @@
         filePathEl.textContent = currentProjectFile ? allProjects[currentProjectFile]?.name || '' : (projectsFolder ? projectsFolder.name || '' : '');
       } else if (tab === 'projects') {
         filePathEl.textContent = projectFileHandle ? projectFileName : '';
+      } else if (tab === 'budget') {
+        filePathEl.textContent = typeof budgetFolderHandle !== 'undefined' && budgetFolderHandle ? budgetFolderHandle.name : '';
       } else {
         filePathEl.textContent = ghConfig.repo || '';
       }
@@ -3876,6 +3985,274 @@
     window.openNewFileModal = openNewFileModal;
     window.openEditModal = openEditModal;
     window.filterMemoryDirectory = filterMemoryDirectory;
+
+    // ===== BUDGET =====
+
+    let budgetFolderHandle = null;
+    let budgetTransactions = [];
+    let budgetLimits = {};
+    let budgetSelectedMonth = null;
+
+    try { budgetLimits = JSON.parse(localStorage.getItem('budget_limits') || '{}'); } catch { budgetLimits = {}; }
+
+    function saveBudgetLimits() {
+      localStorage.setItem('budget_limits', JSON.stringify(budgetLimits));
+    }
+
+    async function openBudgetFolder() {
+      try {
+        budgetFolderHandle = await window.showDirectoryPicker({ id: 'budget', mode: 'read' });
+        await loadLatestBudgetCSV();
+        switchMainTab('budget');
+      } catch(e) {
+        if (e.name !== 'AbortError') showStatus('Error opening folder: ' + e.message);
+      }
+    }
+
+    async function loadLatestBudgetCSV() {
+      if (!budgetFolderHandle) return;
+      const files = [];
+      for await (const [name, handle] of budgetFolderHandle.entries()) {
+        if (handle.kind === 'file' && /^Data_Export_.*\.csv$/i.test(name)) files.push({ name, handle });
+      }
+      if (!files.length) { showStatus('No Data_Export_*.csv files found in folder'); return; }
+      files.sort((a, b) => b.name.localeCompare(a.name));
+      const latest = files[0];
+      const text = await (await latest.handle.getFile()).text();
+      budgetTransactions = parseTransactionCSV(text);
+      const months = [...new Set(budgetTransactions.map(t => t.month))].sort();
+      budgetSelectedMonth = months[months.length - 1] || null;
+      showStatus(`Loaded ${budgetTransactions.length} transactions from ${latest.name}`);
+      renderBudget();
+    }
+
+    function parseCSVRow(line) {
+      const out = []; let cur = '', inQ = false;
+      for (const c of line) {
+        if (c === '"') inQ = !inQ;
+        else if (c === ',' && !inQ) { out.push(cur); cur = ''; }
+        else cur += c;
+      }
+      out.push(cur);
+      return out;
+    }
+
+    function parseTransactionCSV(text) {
+      const lines = text.replace(/^﻿/, '').trim().split(/\r?\n/);
+      if (lines.length < 2) return [];
+      const headers = parseCSVRow(lines[0]).map(h => h.trim());
+      const out = [];
+      for (let i = 1; i < lines.length; i++) {
+        const vals = parseCSVRow(lines[i]);
+        if (vals.length < 3) continue;
+        const r = {};
+        headers.forEach((h, idx) => r[h] = (vals[idx] || '').trim());
+        const debit = parseFloat(r['Debit Amount']) || 0;
+        const credit = parseFloat(r['Credit Amount']) || 0;
+        const dateStr = r['Date'] || '';
+        const m = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (!m) continue;
+        const date = new Date(+m[3], +m[2] - 1, +m[1]);
+        const month = `${m[3]}-${m[2].padStart(2, '0')}`;
+        out.push({
+          account: r['Bank Account'] || '',
+          dateStr, date, month,
+          narrative: r['Narrative'] || '',
+          debit, credit,
+          balance: parseFloat(r['Balance']) || 0,
+          category: (r['Categories'] || 'Uncategorised').trim() || 'Uncategorised',
+        });
+      }
+      return out;
+    }
+
+    function budgetFiltered() {
+      return budgetSelectedMonth ? budgetTransactions.filter(t => t.month === budgetSelectedMonth) : budgetTransactions;
+    }
+
+    function budgetMonths() {
+      return [...new Set(budgetTransactions.map(t => t.month))].sort().reverse();
+    }
+
+    function fmtMonth(ym) {
+      const [y, mo] = ym.split('-');
+      return new Date(+y, +mo - 1, 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+    }
+
+    function fmtAUD(n) {
+      return '$' + Math.abs(n).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function catSpending(txs) {
+      const m = {};
+      txs.forEach(t => { if (t.debit > 0) m[t.category] = (m[t.category] || 0) + t.debit; });
+      return Object.entries(m).sort((a, b) => b[1] - a[1]);
+    }
+
+    function topMerchants(txs, n = 10) {
+      const m = {};
+      txs.forEach(t => { if (t.debit > 0) m[t.narrative] = (m[t.narrative] || 0) + t.debit; });
+      return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, n);
+    }
+
+    function monthlyTotals() {
+      const m = {};
+      budgetTransactions.forEach(t => {
+        if (!m[t.month]) m[t.month] = { inc: 0, exp: 0 };
+        m[t.month].inc += t.credit;
+        m[t.month].exp += t.debit;
+      });
+      return Object.entries(m).sort((a, b) => a[0].localeCompare(b[0]));
+    }
+
+    function renderBudget() {
+      if (!budgetTransactions.length) {
+        document.getElementById('budgetEmptyState').style.display = '';
+        document.getElementById('budgetMainContent').style.display = 'none';
+        return;
+      }
+      document.getElementById('budgetEmptyState').style.display = 'none';
+      document.getElementById('budgetMainContent').style.display = 'flex';
+
+      const txs = budgetFiltered();
+      const months = budgetMonths();
+      const totalInc = txs.reduce((s, t) => s + t.credit, 0);
+      const totalExp = txs.reduce((s, t) => s + t.debit, 0);
+      const net = totalInc - totalExp;
+
+      // Month selector
+      const monthSel = `<div class="budget-month-selector">
+        ${months.map(m => `<button class="budget-month-btn${m === budgetSelectedMonth ? ' active' : ''}" onclick="selectBudgetMonth('${m}')">${fmtMonth(m)}</button>`).join('')}
+        <button class="budget-month-btn${!budgetSelectedMonth ? ' active' : ''}" onclick="selectBudgetMonth(null)">All time</button>
+      </div>`;
+
+      // Summary cards
+      const cards = `<div class="budget-summary-cards">
+        <div class="budget-card"><div class="budget-card-label">Income</div><div class="budget-card-value income">${fmtAUD(totalInc)}</div></div>
+        <div class="budget-card"><div class="budget-card-label">Expenses</div><div class="budget-card-value expense">${fmtAUD(totalExp)}</div></div>
+        <div class="budget-card"><div class="budget-card-label">Net</div><div class="budget-card-value ${net >= 0 ? 'income' : 'expense'}">${net >= 0 ? '+' : '−'}${fmtAUD(net)}</div></div>
+        <div class="budget-card"><div class="budget-card-label">Transactions</div><div class="budget-card-value">${txs.length}</div></div>
+      </div>`;
+
+      // Category spending
+      const cats = catSpending(txs);
+      const maxCat = cats[0]?.[1] || 1;
+      const catRows = cats.map(([cat, amt]) => {
+        const lim = budgetLimits[cat];
+        const over = lim && amt > lim;
+        const esc = cat.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        return `<div class="budget-bar-row">
+          <div class="budget-bar-label" title="${cat}">${cat}</div>
+          <div class="budget-bar-wrap"><div class="budget-bar${over ? ' over' : ''}" style="width:${(amt / maxCat) * 100}%"></div></div>
+          <div class="budget-bar-amount">${fmtAUD(amt)}</div>
+          <div class="budget-bar-extra">${lim
+            ? `<span class="${over ? 'over' : 'under'}">${over ? '⚠ ' : ''}/ ${fmtAUD(lim)}</span>`
+            : `<button class="set-limit-btn" onclick="setBudgetLimit('${esc}')">Set limit</button>`
+          }</div>
+        </div>`;
+      }).join('');
+      const catPanel = `<div>
+        <div class="budget-section-title">Spending by category</div>
+        <div class="budget-panel-box">${catRows || noDataMsg()}</div>
+      </div>`;
+
+      // Top merchants
+      const merch = topMerchants(txs);
+      const maxMerch = merch[0]?.[1] || 1;
+      const merchRows = merch.map(([name, amt], i) => `<div class="budget-bar-row">
+        <div class="budget-rank">${i + 1}</div>
+        <div class="budget-bar-label" style="flex:0 0 120px" title="${name}">${name}</div>
+        <div class="budget-bar-wrap"><div class="budget-bar blue" style="width:${(amt / maxMerch) * 100}%"></div></div>
+        <div class="budget-bar-amount">${fmtAUD(amt)}</div>
+      </div>`).join('');
+      const merchPanel = `<div>
+        <div class="budget-section-title">Top merchants</div>
+        <div class="budget-panel-box">${merchRows || noDataMsg()}</div>
+      </div>`;
+
+      // Monthly trend
+      const monthly = monthlyTotals();
+      const maxM = Math.max(...monthly.map(([, d]) => Math.max(d.inc, d.exp)), 1);
+      const H = 80;
+      const trendBars = monthly.map(([m, d]) => {
+        const iH = Math.round((d.inc / maxM) * H);
+        const eH = Math.round((d.exp / maxM) * H);
+        return `<div class="budget-trend-group${m === budgetSelectedMonth ? ' selected' : ''}" onclick="selectBudgetMonth('${m}')">
+          <div class="budget-trend-bars">
+            <div class="budget-trend-bar income" style="height:${iH}px" title="Income ${fmtAUD(d.inc)}"></div>
+            <div class="budget-trend-bar expense" style="height:${eH}px" title="Expenses ${fmtAUD(d.exp)}"></div>
+          </div>
+          <div class="budget-trend-month">${fmtMonth(m).split(' ')[0]}</div>
+        </div>`;
+      }).join('');
+      const trendPanel = `<div class="budget-section-title" style="margin-bottom:10px">Monthly trend
+        <span style="margin-left:12px;font-size:11px;font-weight:400;color:var(--text-muted)">
+          <span style="display:inline-block;width:10px;height:10px;background:#16a34a;border-radius:2px;opacity:.75;margin-right:3px;vertical-align:middle"></span>Income
+          <span style="display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:2px;opacity:.75;margin:0 3px 0 8px;vertical-align:middle"></span>Expenses
+        </span>
+      </div>
+      <div class="budget-trend-wrap"><div class="budget-trend">${trendBars}</div></div>`;
+
+      // Transaction list
+      const sorted = txs.slice().sort((a, b) => b.date - a.date);
+      const txRows = budgetTxRows(sorted.slice(0, 200));
+      const txPanel = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="budget-section-title" style="margin-bottom:0">Transactions${sorted.length > 200 ? ' (200 most recent)' : ''}</div>
+        <input type="text" id="budgetSearch" placeholder="Search narrative or category…" oninput="filterBudgetTx(this.value)"
+          style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--text-primary);font-family:inherit;width:220px;">
+      </div>
+      <div class="budget-tx-list" id="budgetTxList">${txRows}</div>`;
+
+      document.getElementById('budgetContent').innerHTML =
+        monthSel + cards +
+        `<div class="budget-two-col">${catPanel}${merchPanel}</div>` +
+        trendPanel + txPanel;
+    }
+
+    function noDataMsg() {
+      return '<div style="padding:16px;color:var(--text-muted);font-size:13px;text-align:center">No expenses</div>';
+    }
+
+    function budgetTxRows(txs) {
+      if (!txs.length) return '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px">No transactions</div>';
+      return txs.map(t => `<div class="budget-tx-row">
+        <div class="budget-tx-date">${t.dateStr}</div>
+        <div class="budget-tx-narrative" title="${t.narrative}">${t.narrative}</div>
+        <div class="budget-tx-cat">${t.category}</div>
+        <div class="budget-tx-amount ${t.debit > 0 ? 'expense' : 'income'}">${t.debit > 0 ? '−' + fmtAUD(t.debit) : '+' + fmtAUD(t.credit)}</div>
+        <div class="budget-tx-balance">${fmtAUD(t.balance)}</div>
+      </div>`).join('');
+    }
+
+    function filterBudgetTx(q) {
+      const ql = q.toLowerCase();
+      const txs = budgetFiltered().slice().sort((a, b) => b.date - a.date);
+      const filtered = q ? txs.filter(t =>
+        t.narrative.toLowerCase().includes(ql) || t.category.toLowerCase().includes(ql)) : txs;
+      document.getElementById('budgetTxList').innerHTML = budgetTxRows(filtered.slice(0, 200));
+    }
+
+    function selectBudgetMonth(m) {
+      budgetSelectedMonth = m;
+      renderBudget();
+    }
+
+    function setBudgetLimit(cat) {
+      const cur = budgetLimits[cat] ? budgetLimits[cat].toFixed(2) : '';
+      const val = prompt(`Monthly budget limit for "${cat}" in $\n(Leave blank to remove limit):`, cur);
+      if (val === null) return;
+      const n = parseFloat(val);
+      if (!isNaN(n) && n > 0) { budgetLimits[cat] = n; saveBudgetLimits(); renderBudget(); }
+      else if (val.trim() === '') { delete budgetLimits[cat]; saveBudgetLimits(); renderBudget(); }
+    }
+
+    window.selectBudgetMonth = selectBudgetMonth;
+    window.setBudgetLimit = setBudgetLimit;
+    window.filterBudgetTx = filterBudgetTx;
+
+    document.getElementById('budgetTabBtn').addEventListener('click', () => switchMainTab('budget'));
+    document.getElementById('openBudgetBtn').addEventListener('click', openBudgetFolder);
+    document.getElementById('openBudgetBtnLarge').addEventListener('click', openBudgetFolder);
   </script>
 </body>
 </html>
