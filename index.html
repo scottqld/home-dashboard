@@ -4312,10 +4312,13 @@
 
     document.getElementById('budgetTabBtn').addEventListener('click', async () => {
       switchMainTab('budget');
-      if (budgetFolderHandle) {
-        await loadLatestBudgetCSV();
-      } else {
-        await tryAutoLoadBudget();
+      if (!budgetTransactions.length) {
+        // Only load if nothing is in memory yet; re-reads require explicit user action
+        if (budgetFolderHandle) {
+          await loadLatestBudgetCSV();
+        } else {
+          await tryAutoLoadBudget();
+        }
       }
     });
     document.getElementById('openBudgetBtn').addEventListener('click', openBudgetFolder);
