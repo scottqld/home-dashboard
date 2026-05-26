@@ -1578,7 +1578,7 @@
       `;
 
       if (task.note) {
-        html += `<div class="card-note" data-action="edit-note" style="cursor: pointer; margin-left: 30px;">${task.note}</div>`;
+        html += `<div class="card-note" data-action="edit-note" style="cursor: pointer; margin-left: 30px;">${linkifyNote(task.note)}</div>`;
       } else {
         html += `<div class="card-note add-on-hover" data-action="edit-note" style="cursor: pointer; margin-left: 30px; font-style: italic;">+ Add note</div>`;
       }
@@ -1665,6 +1665,17 @@
         else if (e.key === 'Escape') { saved = true; renderTasks(); }
       });
       input.addEventListener('blur', saveEdit);
+    }
+
+    function linkifyNote(text) {
+      if (!text) return '';
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      return escaped.replace(/(https?:\/\/[^\s]+)/g,
+        '<a href="$1" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:underline;word-break:break-all;">$1</a>'
+      );
     }
 
     function startEditingNote(noteEl, task) {
@@ -2321,7 +2332,7 @@
       if (task.note) {
         const note = document.createElement('div');
         note.className = 'list-item-note';
-        note.textContent = task.note;
+        note.innerHTML = linkifyNote(task.note);
         note.addEventListener('click', (e) => {
           e.stopPropagation();
           startEditingListNote(note, task);
@@ -3176,7 +3187,7 @@
         <div class="card-title" data-action="edit-title">${task.title}</div>
       </div>`;
       if (task.note) {
-        html += `<div class="card-note" data-action="edit-note" style="cursor:pointer;margin-left:30px;">${task.note}</div>`;
+        html += `<div class="card-note" data-action="edit-note" style="cursor:pointer;margin-left:30px;">${linkifyNote(task.note)}</div>`;
       } else {
         html += `<div class="card-note add-on-hover" data-action="edit-note" style="cursor:pointer;margin-left:30px;font-style:italic;">+ Add note</div>`;
       }
