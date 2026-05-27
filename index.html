@@ -1352,13 +1352,13 @@
         <rect x="9" y="25" width="7" height="2" rx="1" fill="#c4c4c2"/>
       </svg>
       <div>
-        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v2.0<!-- /APP_VERSION --></span></h1>
+        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v2.1<!-- /APP_VERSION --></span></h1>
         <div id="filePath" class="file-path"></div>
       </div>
       <div class="view-toggle" id="mainTabToggle">
         <button id="tasksTabBtn">Tasks</button>
         <button id="projectsTabBtn" style="display:none;">Projects</button>
-        <button id="focusTabBtn" class="active">Focus</button>
+        <button id="focusTabBtn" class="active">Focus<span id="focusBadge" class="focus-badge" style="display:none;"></span></button>
         <button id="memoryTabBtn">Memory</button>
       </div>
       <div class="view-toggle" id="taskViewToggle" style="display:none;">
@@ -3073,7 +3073,7 @@
         });
         container.appendChild(dg);
       }
-      focusTabBtn.innerHTML = 'Focus' + (totalCount > 0 ? '<span class="focus-badge">' + totalCount + '</span>' : '');
+      const focusBadge = document.getElementById('focusBadge'); if (focusBadge) { focusBadge.textContent = totalCount; focusBadge.style.display = totalCount > 0 ? 'inline-flex' : 'none'; }
       if (!anyFound) { emptyState.style.display = 'flex'; container.style.display = 'none'; }
       else { emptyState.style.display = 'none'; container.style.display = 'block'; }
     }
