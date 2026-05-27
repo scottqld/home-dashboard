@@ -1352,13 +1352,13 @@
         <rect x="9" y="25" width="7" height="2" rx="1" fill="#c4c4c2"/>
       </svg>
       <div>
-        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v1.7<!-- /APP_VERSION --></span></h1>
+        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v1.8<!-- /APP_VERSION --></span></h1>
         <div id="filePath" class="file-path"></div>
       </div>
       <div class="view-toggle" id="mainTabToggle">
-        <button id="tasksTabBtn" class="active">Tasks</button>
+        <button id="tasksTabBtn">Tasks</button>
         <button id="projectsTabBtn" style="display:none;">Projects</button>
-        <button id="focusTabBtn">Focus</button>
+        <button id="focusTabBtn" class="active">Focus</button>
         <button id="memoryTabBtn">Memory</button>
       </div>
       <div class="view-toggle" id="taskViewToggle">
@@ -1378,7 +1378,7 @@
   </header>
 
   <!-- TASKS TAB PANEL -->
-  <div class="tab-panel active" id="tasksPanel">
+  <div class="tab-panel" id="tasksPanel">
     <!-- Projects overview -->
     <div id="projectsOverview" style="flex:1; overflow-y:auto; min-height:0;">
       <div id="projectsEmptyState" class="empty-state">
@@ -1428,7 +1428,7 @@
   </div>
 
   <!-- FOCUS TAB PANEL -->
-  <div class="tab-panel" id="focusPanel">
+  <div class="tab-panel active" id="focusPanel">
     <div id="focusEmptyState" class="empty-state" style="display:none;">
       <p style="font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">Nothing in progress</p>
       <p style="color:var(--text-muted);font-size:14px;">Tasks in "In Progress" sections across your projects will appear here.</p>
@@ -1490,7 +1490,7 @@
 
   <script>
     // ===== SHARED STATE =====
-    let activeMainTab = 'tasks'; // 'tasks' or 'memory'
+    let activeMainTab = 'focus'; // 'tasks' or 'memory'
 
     const statusEl = document.getElementById('status');
     const filePathEl = document.getElementById('filePath');
