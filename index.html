@@ -261,6 +261,46 @@
       color: var(--text-primary);
     }
 
+    .card-notes { margin-top: 4px; }
+    .card-note-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 2px 0;
+    }
+    .card-note-row > .note-text {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    .card-note-row > .note-text:hover { color: var(--text-secondary); }
+    .note-delete {
+      opacity: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      flex-shrink: 0;
+      line-height: 1.5;
+      transition: opacity 0.1s;
+    }
+    .card-note-row:hover .note-delete,
+    .list-item-note-row:hover .note-delete { opacity: 1; }
+    .list-item-note-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 1px 0;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .list-item-note-row > .note-text {
+      flex: 1;
+      cursor: pointer;
+    }
+    .list-item-note-row > .note-text:hover { color: var(--text-secondary); }
+
     .card-note {
       font-size: 13px;
       color: var(--text-muted);
@@ -1270,7 +1310,7 @@
         <rect x="9" y="25" width="7" height="2" rx="1" fill="#c4c4c2"/>
       </svg>
       <div>
-        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v1.1<!-- /APP_VERSION --></span></h1>
+        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v1.2<!-- /APP_VERSION --></span></h1>
         <div id="filePath" class="file-path"></div>
       </div>
       <div class="view-toggle" id="mainTabToggle">
@@ -1513,18 +1553,19 @@
           const checked = line.match(/\[[xX]\]/) !== null;
           let text = line.replace(/^- \[[ xX]\]\s*/, '');
           let title = text;
-          let note = '';
+          let notes = [];
 
           const boldMatch = text.match(/^\*\*(.+?)\*\*(.*)$/);
           if (boldMatch) {
             title = boldMatch[1];
-            note = boldMatch[2].replace(/^\s*-\s*/, '').trim();
+            const rawNote = boldMatch[2].replace(/^\s*-\s*/, '').trim();
+            notes = rawNote ? rawNote.split(' || ') : [];
           }
 
           currentTask = {
             id: Date.now() + Math.random(),
             title,
-            note,
+            notes,
             checked,
             subtasks: [],
             section: currentSectionId
@@ -1551,7 +1592,7 @@
         const sectionTasks = tasks[section.id] || [];
         sectionTasks.forEach(t => {
           const checkbox = t.checked ? '[x]' : '[ ]';
-          const note = t.note ? ` - ${t.note}` : '';
+          const note = (t.notes && t.notes.length) ? ` - ${t.notes.join(' || ')}` : '';
           md += `- ${checkbox} **${t.title}**${note}\n`;
           t.subtasks.forEach(st => {
             const stCheckbox = st.checked ? '[x]' : '[ ]';
@@ -1577,11 +1618,15 @@
         </div>
       `;
 
-      if (task.note) {
-        html += `<div class="card-note" data-action="edit-note" style="cursor: pointer; margin-left: 30px;">${linkifyNote(task.note)}</div>`;
-      } else {
-        html += `<div class="card-note add-on-hover" data-action="edit-note" style="cursor: pointer; margin-left: 30px; font-style: italic;">+ Add note</div>`;
-      }
+      html += `<div class="card-notes" style="margin-left:30px;">`;
+      (task.notes || []).forEach((n, i) => {
+        html += `<div class="card-note-row">
+          <span class="note-text" data-action="edit-note" data-note-idx="${i}">${linkifyNote(n)}</span>
+          <span class="note-delete" data-action="delete-note" data-note-idx="${i}" title="Remove note">&times;</span>
+        </div>`;
+      });
+      html += `<div class="card-note add-on-hover" data-action="add-note" style="cursor:pointer;font-style:italic;padding:2px 0;">+ Add note</div>`;
+      html += `</div>`;
 
       if (task.subtasks.length > 0) {
         html += '<div class="card-subtasks" style="margin-left: 30px;">';
@@ -1624,7 +1669,12 @@
         } else if (action === 'edit-title') {
           startEditingTitle(e.target, task);
         } else if (action === 'edit-note') {
-          startEditingNote(e.target, task);
+          startEditingNote(e.target, task, parseInt(e.target.dataset.noteIdx));
+        } else if (action === 'add-note') {
+          startAddingNote(e.target, task);
+        } else if (action === 'delete-note') {
+          task.notes.splice(parseInt(e.target.dataset.noteIdx), 1);
+          markChanged(); renderTasks();
         } else if (action === 'edit-subtask') {
           const idx = parseInt(e.target.dataset.idx);
           startEditingSubtask(e.target, task, idx);
@@ -1667,6 +1717,28 @@
       input.addEventListener('blur', saveEdit);
     }
 
+    function startAddingNote(addEl, task) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'Add a note...';
+      input.style.cssText = 'width: 100%; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 6px; padding: 4px 8px; color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none;';
+      addEl.replaceWith(input);
+      input.focus();
+      let saved = false;
+      const saveEdit = () => {
+        if (saved) return;
+        saved = true;
+        const val = input.value.trim();
+        if (val) { if (!task.notes) task.notes = []; task.notes.push(val); markChanged(); }
+        renderTasks();
+      };
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveEdit);
+    }
+
     function linkifyNote(text) {
       if (!text) return '';
       const escaped = text
@@ -1678,11 +1750,11 @@
       );
     }
 
-    function startEditingNote(noteEl, task) {
+    function startEditingNote(noteEl, task, noteIdx) {
       const input = document.createElement('input');
       input.type = 'text';
-      input.value = task.note || '';
-      input.placeholder = 'Add a note...';
+      input.value = (task.notes && task.notes[noteIdx]) || '';
+      input.placeholder = 'Edit note...';
       input.style.cssText = 'width: 100%; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 6px; padding: 4px 8px; color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none;';
 
       noteEl.replaceWith(input);
@@ -1692,7 +1764,10 @@
       const saveEdit = () => {
         if (saved) return;
         saved = true;
-        task.note = input.value.trim();
+        const val = input.value.trim();
+        if (!task.notes) task.notes = [];
+        if (val) { task.notes[noteIdx] = val; }
+        else { task.notes.splice(noteIdx, 1); }
         markChanged();
         renderTasks();
       };
@@ -2329,25 +2404,32 @@
       });
       content.appendChild(title);
 
-      if (task.note) {
-        const note = document.createElement('div');
-        note.className = 'list-item-note';
-        note.innerHTML = linkifyNote(task.note);
-        note.addEventListener('click', (e) => {
-          e.stopPropagation();
-          startEditingListNote(note, task);
-        });
-        content.appendChild(note);
-      } else {
-        const addNote = document.createElement('div');
-        addNote.className = 'list-item-note add-note';
-        addNote.textContent = '+ Add note';
-        addNote.addEventListener('click', (e) => {
-          e.stopPropagation();
-          startEditingListNote(addNote, task);
-        });
-        content.appendChild(addNote);
-      }
+      const notesWrap = document.createElement('div');
+      (task.notes || []).forEach((n, idx) => {
+        const row = document.createElement('div');
+        row.className = 'list-item-note-row';
+        const noteText = document.createElement('span');
+        noteText.className = 'note-text';
+        noteText.innerHTML = linkifyNote(n);
+        noteText.addEventListener('click', (e) => { e.stopPropagation(); startEditingListNote(noteText, task, idx); });
+        const delBtn = document.createElement('span');
+        delBtn.className = 'note-delete';
+        delBtn.innerHTML = '&times;';
+        delBtn.title = 'Remove note';
+        delBtn.addEventListener('click', (e) => { e.stopPropagation(); task.notes.splice(idx, 1); markChanged(); renderTasks(); });
+        row.appendChild(noteText);
+        row.appendChild(delBtn);
+        notesWrap.appendChild(row);
+      });
+      const addNote = document.createElement('div');
+      addNote.className = 'list-item-note add-note';
+      addNote.textContent = '+ Add note';
+      addNote.addEventListener('click', (e) => {
+        e.stopPropagation();
+        startAddingListNote(addNote, task);
+      });
+      notesWrap.appendChild(addNote);
+      content.appendChild(notesWrap);
 
       if (task.subtasks && task.subtasks.length > 0) {
         const subtasksContainer = document.createElement('div');
@@ -2409,25 +2491,47 @@
       return item;
     }
 
-    function startEditingListNote(noteEl, task) {
+    function startEditingListNote(noteEl, task, noteIdx) {
       const input = document.createElement('input');
       input.type = 'text';
-      input.value = task.note || '';
-      input.placeholder = 'Add a note...';
+      input.value = (task.notes && task.notes[noteIdx]) || '';
+      input.placeholder = 'Edit note...';
       input.style.cssText = 'width: 100%; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 6px; padding: 4px 8px; color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none;';
-
       noteEl.replaceWith(input);
       input.focus();
-
       let saved = false;
       const saveEdit = () => {
         if (saved) return;
         saved = true;
-        task.note = input.value.trim();
+        const val = input.value.trim();
+        if (!task.notes) task.notes = [];
+        if (val) { task.notes[noteIdx] = val; }
+        else { task.notes.splice(noteIdx, 1); }
         markChanged();
         renderTasks();
       };
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+        else if (e.key === 'Escape') { saved = true; renderTasks(); }
+      });
+      input.addEventListener('blur', saveEdit);
+    }
 
+    function startAddingListNote(addEl, task) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'Add a note...';
+      input.style.cssText = 'width: 100%; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 6px; padding: 4px 8px; color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none;';
+      addEl.replaceWith(input);
+      input.focus();
+      let saved = false;
+      const saveEdit = () => {
+        if (saved) return;
+        saved = true;
+        const val = input.value.trim();
+        if (val) { if (!task.notes) task.notes = []; task.notes.push(val); markChanged(); }
+        renderTasks();
+      };
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
         else if (e.key === 'Escape') { saved = true; renderTasks(); }
@@ -2741,7 +2845,7 @@
         md += `\n## ${section.name}\n`;
         (p.tasks[section.id] || []).forEach(t => {
           const cb = t.checked ? '[x]' : '[ ]';
-          const note = t.note ? ` - ${t.note}` : '';
+          const note = (t.notes && t.notes.length) ? ` - ${t.notes.join(' || ')}` : '';
           md += `- ${cb} **${t.title}**${note}\n`;
           (t.subtasks || []).forEach(st => { md += `  - ${st.checked ? '[x]' : '[ ]'} ${st.text}\n`; });
         });
@@ -3047,7 +3151,7 @@
         const sectionTasks = projectTasks[section.id] || [];
         sectionTasks.forEach(t => {
           const checkbox = t.checked ? '[x]' : '[ ]';
-          const note = t.note ? ` - ${t.note}` : '';
+          const note = (t.notes && t.notes.length) ? ` - ${t.notes.join(' || ')}` : '';
           md += `- ${checkbox} **${t.title}**${note}\n`;
           t.subtasks.forEach(st => {
             md += `  - ${st.checked ? '[x]' : '[ ]'} ${st.text}\n`;
@@ -3186,11 +3290,15 @@
         <span class="checkbox ${task.checked ? 'checked' : ''}" data-action="toggle"></span>
         <div class="card-title" data-action="edit-title">${linkifyNote(task.title)}</div>
       </div>`;
-      if (task.note) {
-        html += `<div class="card-note" data-action="edit-note" style="cursor:pointer;margin-left:30px;">${linkifyNote(task.note)}</div>`;
-      } else {
-        html += `<div class="card-note add-on-hover" data-action="edit-note" style="cursor:pointer;margin-left:30px;font-style:italic;">+ Add note</div>`;
-      }
+      html += `<div class="card-notes" style="margin-left:30px;">`;
+      (task.notes || []).forEach((n, i) => {
+        html += `<div class="card-note-row">
+          <span class="note-text" data-action="edit-note" data-note-idx="${i}">${linkifyNote(n)}</span>
+          <span class="note-delete" data-action="delete-note" data-note-idx="${i}" title="Remove note">&times;</span>
+        </div>`;
+      });
+      html += `<div class="card-note add-on-hover" data-action="add-note" style="cursor:pointer;font-style:italic;padding:2px 0;">+ Add note</div>`;
+      html += `</div>`;
       card.innerHTML = html;
       card.addEventListener('dragstart', (e) => { card.classList.add('dragging'); e.dataTransfer.setData('text/plain', task.id); });
       card.addEventListener('dragend', () => card.classList.remove('dragging'));
@@ -3206,13 +3314,37 @@
           input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } else if (e.key === 'Escape') { saved = true; renderProjectBoard(); } });
           input.addEventListener('blur', save);
         } else if (action === 'edit-note') {
-          const input = document.createElement('input'); input.type = 'text'; input.value = task.note || ''; input.placeholder = 'Add a note...';
+          const noteIdx = parseInt(e.target.dataset.noteIdx);
+          const input = document.createElement('input'); input.type = 'text';
+          input.value = (task.notes && task.notes[noteIdx]) || ''; input.placeholder = 'Edit note...';
           input.style.cssText = 'width:100%;background:var(--bg-card);border:2px solid var(--accent);border-radius:6px;padding:4px 8px;color:var(--text-primary);font-size:13px;font-family:inherit;outline:none;';
           e.target.replaceWith(input); input.focus();
           let saved = false;
-          const save = () => { if (saved) return; saved = true; task.note = input.value.trim(); markProjectChanged(); renderProjectBoard(); };
+          const save = () => {
+            if (saved) return; saved = true;
+            const val = input.value.trim();
+            if (!task.notes) task.notes = [];
+            if (val) { task.notes[noteIdx] = val; } else { task.notes.splice(noteIdx, 1); }
+            markProjectChanged(); renderProjectBoard();
+          };
           input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } else if (e.key === 'Escape') { saved = true; renderProjectBoard(); } });
           input.addEventListener('blur', save);
+        } else if (action === 'add-note') {
+          const input = document.createElement('input'); input.type = 'text'; input.placeholder = 'Add a note...';
+          input.style.cssText = 'width:100%;background:var(--bg-card);border:2px solid var(--accent);border-radius:6px;padding:4px 8px;color:var(--text-primary);font-size:13px;font-family:inherit;outline:none;';
+          e.target.replaceWith(input); input.focus();
+          let saved = false;
+          const save = () => {
+            if (saved) return; saved = true;
+            const val = input.value.trim();
+            if (val) { if (!task.notes) task.notes = []; task.notes.push(val); markProjectChanged(); }
+            renderProjectBoard();
+          };
+          input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } else if (e.key === 'Escape') { saved = true; renderProjectBoard(); } });
+          input.addEventListener('blur', save);
+        } else if (action === 'delete-note') {
+          const noteIdx = parseInt(e.target.dataset.noteIdx);
+          if (task.notes) { task.notes.splice(noteIdx, 1); markProjectChanged(); renderProjectBoard(); }
         } else if (action === 'delete') {
           if (!confirm(`Delete "${task.title}"?`)) return;
           for (const sec of projectSections) { const arr = projectTasks[sec.id] || []; const i = arr.findIndex(t => t.id === task.id); if (i !== -1) { arr.splice(i, 1); break; } }
