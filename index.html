@@ -1352,7 +1352,7 @@
         <rect x="9" y="25" width="7" height="2" rx="1" fill="#c4c4c2"/>
       </svg>
       <div>
-        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v1.9<!-- /APP_VERSION --></span></h1>
+        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v2.0<!-- /APP_VERSION --></span></h1>
         <div id="filePath" class="file-path"></div>
       </div>
       <div class="view-toggle" id="mainTabToggle">
@@ -3001,74 +3001,84 @@
       return { total, done, inProgress };
     }
 
+    // Focus view state
+    let doneTodayTasks = [];
+    const STALE_DAYS = 5;
+    let focusCollapsed = {};
+    let focusFirstSeen = {};
+    try { focusCollapsed = JSON.parse(localStorage.getItem('focusCollapsed') || '{}'); } catch(e) {}
+    try { focusFirstSeen = JSON.parse(localStorage.getItem('focusFirstSeen') || '{}'); } catch(e) {}
+
     function renderFocusView() {
       const container = document.getElementById('focusContent');
       const emptyState = document.getElementById('focusEmptyState');
       if (!container) return;
       container.innerHTML = '';
       const files = Object.keys(allProjects).filter(f => f !== 'CLAUDE.md' && f !== 'TASKS.md');
-      let anyFound = false;
+      let anyFound = false, totalCount = 0;
       for (const filename of files) {
         const p = allProjects[filename];
         const ipSections = p.sections.filter(s => /in.?progress/i.test(s.name));
         if (!ipSections.length) continue;
         const groupTasks = [];
-        for (const sec of ipSections) {
-          for (const t of (p.tasks[sec.id] || [])) {
-            if (!t.checked) groupTasks.push({ task: t, sectionName: sec.name });
-          }
-        }
+        for (const sec of ipSections) { for (const t of (p.tasks[sec.id] || [])) { if (!t.checked) groupTasks.push({ task: t, sectionName: sec.name }); } }
         if (!groupTasks.length) continue;
-        anyFound = true;
-        const group = document.createElement('div');
-        group.className = 'focus-project-group';
-        const heading = document.createElement('div');
-        heading.className = 'focus-project-heading';
-        heading.innerHTML = '<span>' + p.name + '</span><span style="font-size:11px;font-weight:500;opacity:0.7;">' + groupTasks.length + ' task' + (groupTasks.length !== 1 ? 's' : '') + ' ›</span>';
-        heading.addEventListener('click', () => openProjectBoard(filename));
+        anyFound = true; totalCount += groupTasks.length;
+        const isCollapsed = !!focusCollapsed[filename];
+        const group = document.createElement('div'); group.className = 'focus-project-group';
+        const heading = document.createElement('div'); heading.className = 'focus-project-heading';
+        const chevron = isCollapsed ? '\u25B8' : '\u25BE';
+        heading.innerHTML = '<span style="display:flex;align-items:center;gap:7px;"><span style="font-size:11px;">' + chevron + '</span><span>' + p.name + '</span><span style="font-size:11px;font-weight:500;opacity:0.6;">' + groupTasks.length + ' task' + (groupTasks.length !== 1 ? 's' : '') + '</span></span><span class="focus-open-link" style="font-size:11px;font-weight:500;color:var(--accent);opacity:0.75;cursor:pointer;">Open \u2192</span>';
+        heading.querySelector('.focus-open-link').addEventListener('click', e => { e.stopPropagation(); openProjectBoard(filename); });
+        heading.addEventListener('click', () => { focusCollapsed[filename] = !focusCollapsed[filename]; localStorage.setItem('focusCollapsed', JSON.stringify(focusCollapsed)); renderFocusView(); });
         group.appendChild(heading);
+        const tasksWrap = document.createElement('div'); tasksWrap.style.display = isCollapsed ? 'none' : 'block';
         for (const { task, sectionName } of groupTasks) {
-          const row = document.createElement('div');
-          row.className = 'focus-task-row';
-          const cb = document.createElement('input');
-          cb.type = 'checkbox'; cb.className = 'focus-checkbox'; cb.checked = task.checked;
+          const key = filename + '::' + task.title;
+          if (!focusFirstSeen[key]) { focusFirstSeen[key] = Date.now(); localStorage.setItem('focusFirstSeen', JSON.stringify(focusFirstSeen)); }
+          const ageDays = (Date.now() - focusFirstSeen[key]) / 86400000;
+          const isStale = ageDays >= STALE_DAYS;
+          const row = document.createElement('div'); row.className = 'focus-task-row' + (isStale ? ' focus-task-stale' : '');
+          const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'focus-checkbox'; cb.checked = false;
           cb.addEventListener('change', () => {
-            task.checked = cb.checked;
+            task.checked = true; doneTodayTasks.push({ task, projectName: p.name });
+            delete focusFirstSeen[key]; localStorage.setItem('focusFirstSeen', JSON.stringify(focusFirstSeen));
             renderFocusView(); renderProjectCards();
           });
-          const body = document.createElement('div');
-          body.className = 'focus-task-body';
-          const titleEl = document.createElement('div');
-          titleEl.className = 'focus-task-title'; titleEl.innerHTML = linkifyNote(task.title);
-          body.appendChild(titleEl);
-          const secEl = document.createElement('div');
-          secEl.className = 'focus-task-section'; secEl.textContent = sectionName;
-          body.appendChild(secEl);
-          if (task.notes && task.notes.length) {
-            const nw = document.createElement('div'); nw.className = 'focus-task-notes';
-            task.notes.forEach(n => { const ne = document.createElement('div'); ne.className = 'focus-task-note'; ne.innerHTML = linkifyNote(n); nw.appendChild(ne); });
-            body.appendChild(nw);
-          }
-          if (task.subtasks && task.subtasks.length) {
-            const sw = document.createElement('div'); sw.className = 'focus-task-subtasks';
-            task.subtasks.forEach(st => {
-              const se = document.createElement('div'); se.className = 'focus-task-subtask';
-              se.innerHTML = '<span style="color:' + (st.checked ? 'var(--accent)' : 'var(--border)') + ';">●</span>' + linkifyNote(st.text);
-              if (st.checked) se.style.textDecoration = 'line-through';
-              sw.appendChild(se);
-            });
-            body.appendChild(sw);
-          }
-          row.appendChild(cb); row.appendChild(body);
-          group.appendChild(row);
+          const body = document.createElement('div'); body.className = 'focus-task-body';
+          const titleRow = document.createElement('div'); titleRow.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;';
+          const titleEl = document.createElement('div'); titleEl.className = 'focus-task-title'; titleEl.innerHTML = linkifyNote(task.title);
+          titleRow.appendChild(titleEl);
+          if (isStale) { const b = document.createElement('span'); b.className = 'focus-stale-badge'; b.textContent = Math.floor(ageDays) + 'd'; b.title = 'In progress for ' + Math.floor(ageDays) + ' days'; titleRow.appendChild(b); }
+          body.appendChild(titleRow);
+          const secEl = document.createElement('div'); secEl.className = 'focus-task-section'; secEl.textContent = sectionName; body.appendChild(secEl);
+          if (task.notes && task.notes.length) { const nw = document.createElement('div'); nw.className = 'focus-task-notes'; task.notes.forEach(n => { const ne = document.createElement('div'); ne.className = 'focus-task-note'; ne.innerHTML = linkifyNote(n); nw.appendChild(ne); }); body.appendChild(nw); }
+          if (task.subtasks && task.subtasks.length) { const sw = document.createElement('div'); sw.className = 'focus-task-subtasks'; task.subtasks.forEach(st => { const se = document.createElement('div'); se.className = 'focus-task-subtask'; se.innerHTML = '<span style="color:' + (st.checked ? 'var(--accent)' : 'var(--border)') + ';">\u25CF</span>' + linkifyNote(st.text); if (st.checked) se.style.textDecoration = 'line-through'; sw.appendChild(se); }); body.appendChild(sw); }
+          row.appendChild(cb); row.appendChild(body); tasksWrap.appendChild(row);
         }
-        container.appendChild(group);
+        group.appendChild(tasksWrap); container.appendChild(group);
       }
+      if (doneTodayTasks.length) {
+        anyFound = true;
+        const dg = document.createElement('div'); dg.className = 'focus-project-group';
+        const dh = document.createElement('div'); dh.className = 'focus-project-heading focus-done-heading';
+        dh.innerHTML = '<span style="display:flex;align-items:center;gap:7px;"><span>\u2713 Done this session</span><span style="font-size:11px;font-weight:500;opacity:0.6;">' + doneTodayTasks.length + '</span></span>';
+        dg.appendChild(dh);
+        doneTodayTasks.forEach(({ task, projectName }) => {
+          const row = document.createElement('div'); row.className = 'focus-task-row focus-done-row';
+          const check = document.createElement('span'); check.style.cssText = 'color:var(--accent);font-size:15px;flex-shrink:0;margin-top:2px;'; check.textContent = '\u2713';
+          const body = document.createElement('div'); body.className = 'focus-task-body';
+          body.innerHTML = '<div class="focus-task-title" style="text-decoration:line-through;">' + linkifyNote(task.title) + '</div><div class="focus-task-section">' + projectName + '</div>';
+          row.appendChild(check); row.appendChild(body); dg.appendChild(row);
+        });
+        container.appendChild(dg);
+      }
+      focusTabBtn.innerHTML = 'Focus' + (totalCount > 0 ? '<span class="focus-badge">' + totalCount + '</span>' : '');
       if (!anyFound) { emptyState.style.display = 'flex'; container.style.display = 'none'; }
       else { emptyState.style.display = 'none'; container.style.display = 'block'; }
     }
 
-    function renderProjectCards() {
+        function renderProjectCards() {
       const grid = document.getElementById('projectCards');
       grid.innerHTML = '';
       const files = Object.keys(allProjects).filter(f => f !== 'CLAUDE.md' && f !== 'TASKS.md');
