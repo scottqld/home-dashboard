@@ -1307,6 +1307,36 @@
       border-color: var(--accent);
       color: var(--accent);
     }
+    .focus-project-group { margin-bottom: 28px; }
+    .focus-project-heading {
+      font-size: 13px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 10px;
+      padding-bottom: 6px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+    }
+    .focus-project-heading:hover { color: var(--accent); }
+    .focus-task-row {
+      display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px;
+      border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border);
+      margin-bottom: 6px; transition: border-color 0.15s;
+    }
+    .focus-task-row:hover { border-color: var(--accent); }
+    .focus-task-body { flex: 1; min-width: 0; }
+    .focus-task-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+    .focus-task-section { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .focus-task-subtasks { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+    .focus-task-subtask { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+    .focus-task-notes { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+    .focus-task-note {
+      font-size: 12px; color: var(--text-muted); padding: 3px 8px;
+      background: var(--bg-secondary); border-radius: 4px; border-left: 2px solid var(--border-light);
+    }
+    .focus-checkbox {
+      width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--border);
+      flex-shrink: 0; margin-top: 2px; cursor: pointer; background: var(--bg-card);
+      appearance: none; -webkit-appearance: none;
+    }
+    .focus-checkbox:checked { background: var(--accent); border-color: var(--accent); }
 
   </style>
 </head>
@@ -1322,12 +1352,13 @@
         <rect x="9" y="25" width="7" height="2" rx="1" fill="#c4c4c2"/>
       </svg>
       <div>
-        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v1.6<!-- /APP_VERSION --></span></h1>
+        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v1.7<!-- /APP_VERSION --></span></h1>
         <div id="filePath" class="file-path"></div>
       </div>
       <div class="view-toggle" id="mainTabToggle">
         <button id="tasksTabBtn" class="active">Tasks</button>
         <button id="projectsTabBtn" style="display:none;">Projects</button>
+        <button id="focusTabBtn">Focus</button>
         <button id="memoryTabBtn">Memory</button>
       </div>
       <div class="view-toggle" id="taskViewToggle">
@@ -1394,6 +1425,15 @@
         <div id="memoryContentContainer"></div>
       </div>
     </div>
+  </div>
+
+  <!-- FOCUS TAB PANEL -->
+  <div class="tab-panel" id="focusPanel">
+    <div id="focusEmptyState" class="empty-state" style="display:none;">
+      <p style="font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">Nothing in progress</p>
+      <p style="color:var(--text-muted);font-size:14px;">Tasks in "In Progress" sections across your projects will appear here.</p>
+    </div>
+    <div id="focusContent" style="overflow-y:auto;flex:1;min-height:0;padding-bottom:24px;"></div>
   </div>
 
   <!-- MODAL (shared for memory) -->
@@ -1464,9 +1504,11 @@
     // ===== MAIN TAB SWITCHING =====
     const tasksTabBtn = document.getElementById('tasksTabBtn');
     const projectsTabBtn = document.getElementById('projectsTabBtn');
+    const focusTabBtn = document.getElementById('focusTabBtn');
     const memoryTabBtn = document.getElementById('memoryTabBtn');
     const tasksPanel = document.getElementById('tasksPanel');
     const projectsPanel = document.getElementById('projectsPanel');
+    const focusPanel = document.getElementById('focusPanel');
     const memoryPanel = document.getElementById('memoryPanel');
     const taskViewToggle = document.getElementById('taskViewToggle');
     const openTaskBtn = document.getElementById('openTaskBtn');
@@ -1478,10 +1520,12 @@
 
       tasksTabBtn.classList.toggle('active', tab === 'tasks');
       projectsTabBtn.classList.toggle('active', tab === 'projects');
+      focusTabBtn.classList.toggle('active', tab === 'focus');
       memoryTabBtn.classList.toggle('active', tab === 'memory');
 
       tasksPanel.classList.toggle('active', tab === 'tasks');
       projectsPanel.classList.toggle('active', tab === 'projects');
+      focusPanel.classList.toggle('active', tab === 'focus');
       memoryPanel.classList.toggle('active', tab === 'memory');
 
       taskViewToggle.style.display = tab === 'tasks' ? 'flex' : 'none';
@@ -1498,6 +1542,9 @@
         filePathEl.textContent = currentProjectFile ? allProjects[currentProjectFile]?.name || '' : (projectsFolder ? projectsFolder.name || '' : '');
       } else if (tab === 'projects') {
         filePathEl.textContent = projectFileHandle ? projectFileName : '';
+      } else if (tab === 'focus') {
+        filePathEl.textContent = '';
+        renderFocusView();
       } else {
         filePathEl.textContent = ghConfig.repo || '';
       }
@@ -1505,6 +1552,7 @@
 
     tasksTabBtn.addEventListener('click', () => switchMainTab('tasks'));
     projectsTabBtn.addEventListener('click', () => switchMainTab('projects'));
+    focusTabBtn.addEventListener('click', () => switchMainTab('focus'));
     memoryTabBtn.addEventListener('click', () => {
       switchMainTab('memory');
       if (ghConfig.token && ghConfig.repo && memoryMainContent.style.display === 'none') {
@@ -2953,6 +3001,73 @@
       return { total, done, inProgress };
     }
 
+    function renderFocusView() {
+      const container = document.getElementById('focusContent');
+      const emptyState = document.getElementById('focusEmptyState');
+      if (!container) return;
+      container.innerHTML = '';
+      const files = Object.keys(allProjects).filter(f => f !== 'CLAUDE.md' && f !== 'TASKS.md');
+      let anyFound = false;
+      for (const filename of files) {
+        const p = allProjects[filename];
+        const ipSections = p.sections.filter(s => /in.?progress/i.test(s.name));
+        if (!ipSections.length) continue;
+        const groupTasks = [];
+        for (const sec of ipSections) {
+          for (const t of (p.tasks[sec.id] || [])) {
+            if (!t.checked) groupTasks.push({ task: t, sectionName: sec.name });
+          }
+        }
+        if (!groupTasks.length) continue;
+        anyFound = true;
+        const group = document.createElement('div');
+        group.className = 'focus-project-group';
+        const heading = document.createElement('div');
+        heading.className = 'focus-project-heading';
+        heading.innerHTML = '<span>' + p.name + '</span><span style="font-size:11px;font-weight:500;opacity:0.7;">' + groupTasks.length + ' task' + (groupTasks.length !== 1 ? 's' : '') + ' ›</span>';
+        heading.addEventListener('click', () => openProjectBoard(filename));
+        group.appendChild(heading);
+        for (const { task, sectionName } of groupTasks) {
+          const row = document.createElement('div');
+          row.className = 'focus-task-row';
+          const cb = document.createElement('input');
+          cb.type = 'checkbox'; cb.className = 'focus-checkbox'; cb.checked = task.checked;
+          cb.addEventListener('change', () => {
+            task.checked = cb.checked;
+            renderFocusView(); renderProjectCards();
+          });
+          const body = document.createElement('div');
+          body.className = 'focus-task-body';
+          const titleEl = document.createElement('div');
+          titleEl.className = 'focus-task-title'; titleEl.innerHTML = linkifyNote(task.title);
+          body.appendChild(titleEl);
+          const secEl = document.createElement('div');
+          secEl.className = 'focus-task-section'; secEl.textContent = sectionName;
+          body.appendChild(secEl);
+          if (task.notes && task.notes.length) {
+            const nw = document.createElement('div'); nw.className = 'focus-task-notes';
+            task.notes.forEach(n => { const ne = document.createElement('div'); ne.className = 'focus-task-note'; ne.innerHTML = linkifyNote(n); nw.appendChild(ne); });
+            body.appendChild(nw);
+          }
+          if (task.subtasks && task.subtasks.length) {
+            const sw = document.createElement('div'); sw.className = 'focus-task-subtasks';
+            task.subtasks.forEach(st => {
+              const se = document.createElement('div'); se.className = 'focus-task-subtask';
+              se.innerHTML = '<span style="color:' + (st.checked ? 'var(--accent)' : 'var(--border)') + ';">●</span>' + linkifyNote(st.text);
+              if (st.checked) se.style.textDecoration = 'line-through';
+              sw.appendChild(se);
+            });
+            body.appendChild(sw);
+          }
+          row.appendChild(cb); row.appendChild(body);
+          group.appendChild(row);
+        }
+        container.appendChild(group);
+      }
+      if (!anyFound) { emptyState.style.display = 'flex'; container.style.display = 'none'; }
+      else { emptyState.style.display = 'none'; container.style.display = 'block'; }
+    }
+
     function renderProjectCards() {
       const grid = document.getElementById('projectCards');
       grid.innerHTML = '';
@@ -2991,6 +3106,7 @@
       addBtn.textContent = '+ Add project';
       addBtn.addEventListener('click', addProjectFromFile);
       addCard.appendChild(addBtn);
+      if (activeMainTab === 'focus') renderFocusView();
     }
 
     function openProjectBoard(filename) {
