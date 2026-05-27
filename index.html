@@ -1337,6 +1337,11 @@
       appearance: none; -webkit-appearance: none;
     }
     .focus-checkbox:checked { background: var(--accent); border-color: var(--accent); }
+    .focus-badge { display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; border-radius: 10px; font-size: 10px; font-weight: 700; min-width: 17px; height: 17px; padding: 0 4px; margin-left: 5px; vertical-align: middle; line-height: 1; }
+    .focus-stale-badge { font-size: 10px; font-weight: 600; color: #b45309; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 4px; padding: 1px 5px; flex-shrink: 0; }
+    .focus-task-stale { border-left: 3px solid #fcd34d; }
+    .focus-done-row { opacity: 0.5; }
+    .focus-done-heading { color: var(--text-muted); border-bottom-color: var(--border-light); }
 
   </style>
 </head>
@@ -1352,7 +1357,7 @@
         <rect x="9" y="25" width="7" height="2" rx="1" fill="#c4c4c2"/>
       </svg>
       <div>
-        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v2.1<!-- /APP_VERSION --></span></h1>
+        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v2.2<!-- /APP_VERSION --></span></h1>
         <div id="filePath" class="file-path"></div>
       </div>
       <div class="view-toggle" id="mainTabToggle">
