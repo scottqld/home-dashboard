@@ -276,7 +276,7 @@
       line-height: 1.4;
     }
     .card-note-row > .note-text:hover { color: var(--text-secondary); }
-    .note-delete {
+    .note-delete, .note-edit {
       opacity: 0;
       font-size: 13px;
       color: var(--text-muted);
@@ -285,8 +285,11 @@
       line-height: 1.5;
       transition: opacity 0.1s;
     }
+    .note-edit { font-size: 11px; }
     .card-note-row:hover .note-delete,
+    .card-note-row:hover .note-edit,
     .list-item-note-row:hover .note-delete,
+    .list-item-note-row:hover .note-edit,
     .subtask:hover .note-delete,
     .list-item-subtask:hover .note-delete { opacity: 1; }
     .list-item-note-row {
@@ -1312,7 +1315,7 @@
         <rect x="9" y="25" width="7" height="2" rx="1" fill="#c4c4c2"/>
       </svg>
       <div>
-        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v1.3<!-- /APP_VERSION --></span></h1>
+        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v1.4<!-- /APP_VERSION --></span></h1>
         <div id="filePath" class="file-path"></div>
       </div>
       <div class="view-toggle" id="mainTabToggle">
@@ -1624,6 +1627,7 @@
       (task.notes || []).forEach((n, i) => {
         html += `<div class="card-note-row">
           <span class="note-text" data-action="edit-note" data-note-idx="${i}">${linkifyNote(n)}</span>
+          <span class="note-edit" data-action="edit-note" data-note-idx="${i}" title="Edit note">✎</span>
           <span class="note-delete" data-action="delete-note" data-note-idx="${i}" title="Remove note">&times;</span>
         </div>`;
       });
@@ -2418,12 +2422,18 @@
         noteText.className = 'note-text';
         noteText.innerHTML = linkifyNote(n);
         noteText.addEventListener('click', (e) => { e.stopPropagation(); startEditingListNote(noteText, task, idx); });
+        const editBtn = document.createElement('span');
+        editBtn.className = 'note-edit';
+        editBtn.textContent = '✎';
+        editBtn.title = 'Edit note';
+        editBtn.addEventListener('click', (e) => { e.stopPropagation(); startEditingListNote(noteText, task, idx); });
         const delBtn = document.createElement('span');
         delBtn.className = 'note-delete';
         delBtn.innerHTML = '&times;';
         delBtn.title = 'Remove note';
         delBtn.addEventListener('click', (e) => { e.stopPropagation(); task.notes.splice(idx, 1); markChanged(); renderTasks(); });
         row.appendChild(noteText);
+        row.appendChild(editBtn);
         row.appendChild(delBtn);
         notesWrap.appendChild(row);
       });
@@ -3311,6 +3321,7 @@
       (task.notes || []).forEach((n, i) => {
         html += `<div class="card-note-row">
           <span class="note-text" data-action="edit-note" data-note-idx="${i}">${linkifyNote(n)}</span>
+          <span class="note-edit" data-action="edit-note" data-note-idx="${i}" title="Edit note">✎</span>
           <span class="note-delete" data-action="delete-note" data-note-idx="${i}" title="Remove note">&times;</span>
         </div>`;
       });
