@@ -261,12 +261,15 @@
       color: var(--text-primary);
     }
 
-    .card-notes { margin-top: 4px; }
+    .card-notes { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
     .card-note-row {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 6px;
-      padding: 2px 0;
+      padding: 4px 8px;
+      background: var(--bg-secondary);
+      border-radius: 5px;
+      border-left: 2px solid var(--border-light, rgba(0,0,0,0.08));
     }
     .card-note-row > .note-text {
       flex: 1;
@@ -294,11 +297,15 @@
     .list-item-subtask:hover .note-delete { opacity: 1; }
     .list-item-note-row {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 6px;
-      padding: 1px 0;
+      padding: 3px 8px;
+      margin-top: 3px;
       font-size: 13px;
       color: var(--text-muted);
+      background: var(--bg-secondary);
+      border-radius: 5px;
+      border-left: 2px solid var(--border-light, rgba(0,0,0,0.08));
     }
     .list-item-note-row > .note-text {
       flex: 1;
@@ -1315,7 +1322,7 @@
         <rect x="9" y="25" width="7" height="2" rx="1" fill="#c4c4c2"/>
       </svg>
       <div>
-        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v1.4<!-- /APP_VERSION --></span></h1>
+        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v1.5<!-- /APP_VERSION --></span></h1>
         <div id="filePath" class="file-path"></div>
       </div>
       <div class="view-toggle" id="mainTabToggle">
