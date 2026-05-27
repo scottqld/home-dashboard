@@ -1322,7 +1322,7 @@
         <rect x="9" y="25" width="7" height="2" rx="1" fill="#c4c4c2"/>
       </svg>
       <div>
-        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v1.5<!-- /APP_VERSION --></span></h1>
+        <h1>Productivity <span id="appVersion" style="font-size:0.45em;font-weight:400;color:var(--text-muted);vertical-align:middle;letter-spacing:0.02em;"><!-- APP_VERSION -->v1.6<!-- /APP_VERSION --></span></h1>
         <div id="filePath" class="file-path"></div>
       </div>
       <div class="view-toggle" id="mainTabToggle">
@@ -2940,15 +2940,17 @@
     const addProjectBtn = document.getElementById('addProjectBtn');
 
     function countProjectTasks(sections, tasks) {
-      let total = 0, done = 0;
+      let total = 0, done = 0, inProgress = 0;
       for (const sec of sections) {
+        const isInProgress = /in.?progress/i.test(sec.name);
         for (const t of (tasks[sec.id] || [])) {
           total++;
           if (t.checked) done++;
+          else if (isInProgress) inProgress++;
           for (const st of (t.subtasks || [])) { total++; if (st.checked) done++; }
         }
       }
-      return { total, done };
+      return { total, done, inProgress };
     }
 
     function renderProjectCards() {
@@ -2963,15 +2965,18 @@
 
       for (const filename of files) {
         const p = allProjects[filename];
-        const { total, done } = countProjectTasks(p.sections, p.tasks);
+        const { total, done, inProgress } = countProjectTasks(p.sections, p.tasks);
         const pct = total ? Math.round(done / total * 100) : 0;
         const stageNames = p.sections.map(s => `<span class="project-stage-pill">${s.name}</span>`).join('');
+        const statsHtml = inProgress > 0
+          ? `${done} of ${total} done &nbsp;·&nbsp; <span style="color:var(--accent)">${inProgress} in progress</span>`
+          : `${done} of ${total} tasks done`;
 
         const card = document.createElement('div');
         card.className = 'project-card';
         card.innerHTML = `
           <div class="project-card-name">${p.name}</div>
-          <div class="project-card-stats">${done} of ${total} tasks done</div>
+          <div class="project-card-stats">${statsHtml}</div>
           <div class="project-progress-bar"><div class="project-progress-fill" style="width:${pct}%"></div></div>
           <div class="project-card-stages">${stageNames}</div>
         `;
